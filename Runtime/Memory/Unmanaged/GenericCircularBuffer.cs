@@ -6,12 +6,12 @@ namespace HereticalSolutions.Memory
 {
     //Courtesy of https://github.com/joaoportela/CircularBuffer-CSharp/blob/master/CircularBuffer/CircularBuffer.cs
     [StructLayout(LayoutKind.Sequential)]
-    public unsafe struct CircularBuffer
+    public unsafe struct GenericCircularBuffer<TValue> where TValue: unmanaged
     {
         /// <summary>
         /// Pointer to the unmanaged heap memory the array is stored in
         /// </summary>
-        public byte* MemoryPointer;
+        public TValue* MemoryPointer;
         
         /// <summary>
         /// Unmanaged memory size in bytes
@@ -76,8 +76,8 @@ namespace HereticalSolutions.Memory
         /// <param name="elementSize">The size of one element of the array in bytes</param>
         /// <param name="elementCapacity">Number of elements in the array</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public CircularBuffer(
-            byte* memoryPointer,
+        public GenericCircularBuffer(
+            TValue* memoryPointer,
             int memorySize,
             int elementSize,
             int elementCapacity)
@@ -98,28 +98,17 @@ namespace HereticalSolutions.Memory
         }
         
         /// <summary>
-        /// Is given index valid for the array
-        /// </summary>
-        /// <param name="index">Target index</param>
-        /// <returns>Is index valid</returns>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public bool IndexValid(int index)
-        {
-            return (index > -1) && (index < ElementCapacity);
-        }
-        
-        /// <summary>
         /// Get a pointer to an element in the array
         /// </summary>
         /// <param name="index">Index of the element to get a pointer to</param>
-        public void* this[int index]
+        public ref TValue this[int index]
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get
             {
                 int actualIndex = InternalIndex(index);
                 
-                return MemoryPointer + ElementSize * actualIndex;
+                return ref MemoryPointer[actualIndex];
             }
         }
         
@@ -127,14 +116,14 @@ namespace HereticalSolutions.Memory
         /// Get a pointer to an element in the array
         /// </summary>
         /// <param name="index">Index of the element to get a pointer to</param>
-        public void* this[uint index]
+        public ref TValue this[uint index]
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get
             {
                 int actualIndex = InternalIndex(index);
                 
-                return MemoryPointer + ElementSize * actualIndex;
+                return ref MemoryPointer[actualIndex];
             }
         }
         
@@ -142,28 +131,26 @@ namespace HereticalSolutions.Memory
         /// Get a pointer to an element in the array
         /// </summary>
         /// <param name="index">Index of the element to get a pointer to</param>
-        /// <typeparam name="T">Element type</typeparam>
         /// <returns>Element in the array at specified index</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public T* Get<T>(int index) where T : unmanaged
+        public TValue* Get(int index)
         {
             int actualIndex = InternalIndex(index);
             
-            return (T*)(MemoryPointer + ElementSize * index);
+            return MemoryPointer + actualIndex;
         }
         
         /// <summary>
         /// Get a pointer to an element in the array
         /// </summary>
         /// <param name="index">Index of the element to get a pointer to</param>
-        /// <typeparam name="T">Element type</typeparam>
         /// <returns>Element in the array at specified index</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public T* Get<T>(uint index) where T : unmanaged
+        public TValue* Get(uint index)
         {
             int actualIndex = InternalIndex(index);
             
-            return (T*)(MemoryPointer + ElementSize * index);
+            return MemoryPointer + actualIndex;
         }
         
         /// <summary>
@@ -172,28 +159,9 @@ namespace HereticalSolutions.Memory
         /// <param name="element">Target element</param>
         /// <returns>Element index</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public int IndexOf(void* element)
+        public int IndexOf(TValue* element)
         {
-            long distance = (byte*)element - MemoryPointer;
-            
-            int index = (int)(distance / ElementSize);
-            
-            return (index >= Start)
-                ? (index - Start)
-                : (index + (ElementCapacity - Start));
-        }
-        
-        /// <summary>
-        /// Get the element's index in the array
-        /// </summary>
-        /// <param name="element">Target element</param>
-        /// <returns>Element index</returns>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public int IndexOf<T>(T* element) where T : unmanaged
-        {
-            long distance = (byte*)element - MemoryPointer;
-            
-            int index = (int)(distance / ElementSize);
+            int index = (int)(element - MemoryPointer);
             
             return (index >= Start)
                 ? (index - Start)
@@ -209,9 +177,36 @@ namespace HereticalSolutions.Memory
         /// </summary>
         /// <param name="item">Item to push to the back of the buffer</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void* PushBack()
+        public ref TValue PushBack()
         {
-            var result = this[End];
+            ref TValue result = ref this[End];
+            
+            End = Increment(End);
+            
+            if (IsFull)
+            {
+                Start = Increment(End);
+            }
+            else
+            {
+                ++Count;
+            }
+            
+            return ref result;
+        }
+        
+        /// <summary>
+        /// Pushes a new element to the back of the buffer. Back()/this[Size-1]
+        /// will now return this element.
+        /// 
+        /// When the buffer is full, the element at Front()/this[0] will be 
+        /// popped to allow for this new element to fit.
+        /// </summary>
+        /// <param name="item">Item to push to the back of the buffer</param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public TValue* PushBackReference()
+        {
+            TValue* result = MemoryPointer + End;
             
             End = Increment(End);
             
@@ -232,11 +227,29 @@ namespace HereticalSolutions.Memory
         /// Buffer size by 1.
         /// </summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void* PopFront()
+        public ref TValue PopFront()
         {
             ThrowIfEmpty("Cannot take elements from an empty buffer.");
             
-            var result = this[Start];
+            ref TValue result = ref this[Start];
+            
+            Start = Increment(Start);
+            
+            --Count;
+            
+            return ref result;
+        }
+        
+        /// <summary>
+        /// Removes the element at the front of the buffer. Decreasing the 
+        /// Buffer size by 1.
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public TValue* PopFrontReference()
+        {
+            ThrowIfEmpty("Cannot take elements from an empty buffer.");
+            
+            TValue* result = MemoryPointer + Start;
             
             Start = Increment(Start);
             
