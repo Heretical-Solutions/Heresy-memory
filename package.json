@@ -1,0 +1,15 @@
+{
+  "name": "com.hereticalsolutions.heresy-memory",
+  "version": "0.1.0",
+  "displayName": "Heresy Memory",
+  "description": "Unmanaged memory structures and memory management tools\n\nThe implementation details are described in the following tutorial:\nhttps://www.jacksondunstan.com/articles/3770",
+  "unity": "2020.3",
+  "keywords": [
+    "memory",
+    "heretical-solutions"
+  ],
+  "author": {
+    "name": "BenevolentDrone",
+    "email": "benevolentdrone@gmail.com"
+  }
+}
