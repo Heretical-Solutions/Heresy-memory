@@ -1,13 +1,6 @@
-using System.Collections;
-using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
 using NUnit.Framework;
-using UnityEngine;
-using UnityEngine.TestTools;
-using HereticalSolutions.Memory;
-using System.Runtime.InteropServices;
 using System;
+using System.Runtime.InteropServices;
 
 namespace HereticalSolutions.Memory.Tests
 {
@@ -15,7 +8,7 @@ namespace HereticalSolutions.Memory.Tests
     {
         [TestCase(5, 0, 1, 2, 3, 4, -5)]
         [TestCase(3, 0, 0, 1, -100, 2, 100)]
-        public void Add_Values_ValuesPresent(
+        public void Write_Values_ValuesStored(
             int arraySize,
             int index1,
             int element1,
@@ -42,6 +35,24 @@ namespace HereticalSolutions.Memory.Tests
                     elementCapacity);
                 
                 //Operation
+                
+                //Cache pointers to unmanaged array elements
+                void* pointer1 = unmanagedArray[index1];
+                
+                void* pointer2 = unmanagedArray[index2];
+                
+                void* pointer3 = unmanagedArray[index3];
+                
+                
+                //Cache generic pointers to unmanaged array elements
+                int* genericPointer1 = unmanagedArray.Get<int>(index1);
+                
+                int* genericPointer2 = unmanagedArray.Get<int>(index2);
+                
+                int* genericPointer3 = unmanagedArray.Get<int>(index3);
+                
+                
+                //Store elements
                 *(int*)(unmanagedArray[index1]) = element1;
                 
                 *(int*)(unmanagedArray[index2]) = element2;
@@ -49,11 +60,54 @@ namespace HereticalSolutions.Memory.Tests
                 *(int*)(unmanagedArray[index3]) = element3;
                 
                 //Comparison
+                
+                //Elements obtained by indexer should be equal to the input
                 Assert.AreEqual(*(int*)(unmanagedArray[index1]), element1);
                 
                 Assert.AreEqual(*(int*)(unmanagedArray[index2]), element2);
                 
                 Assert.AreEqual(*(int*)(unmanagedArray[index3]), element3);
+                
+                
+                //Elements obtained by generic method should be equal to the input
+                Assert.AreEqual(*unmanagedArray.Get<int>(index1), element1);
+                
+                Assert.AreEqual(*unmanagedArray.Get<int>(index2), element2);
+                
+                Assert.AreEqual(*unmanagedArray.Get<int>(index3), element3);
+                
+                
+                //Values behind pointers should be equal to the input
+                Assert.AreEqual(*(int*)pointer1, element1);
+                
+                Assert.AreEqual(*(int*)pointer2, element2);
+                
+                Assert.AreEqual(*(int*)pointer3, element3);
+                
+                
+                //Values behind generic pointers should be equal to the input
+                Assert.AreEqual(*genericPointer1, element1);
+                
+                Assert.AreEqual(*genericPointer2, element2);
+                
+                Assert.AreEqual(*genericPointer3, element3);
+                
+                
+                //Array indexes obtained from pointers should match the input
+                Assert.AreEqual(unmanagedArray.IndexOf(pointer1), index1);
+                
+                Assert.AreEqual(unmanagedArray.IndexOf(pointer2), index2);
+                
+                Assert.AreEqual(unmanagedArray.IndexOf(pointer3), index3);
+                
+                
+                //Array indexes obtained from generic pointers should match the input
+                Assert.AreEqual(unmanagedArray.IndexOf<int>(genericPointer1), index1);
+                
+                Assert.AreEqual(unmanagedArray.IndexOf<int>(genericPointer2), index2);
+                
+                Assert.AreEqual(unmanagedArray.IndexOf<int>(genericPointer3), index3);
+                
                 
                 //Deallocation
                 Marshal.FreeHGlobal(pointer);
@@ -87,21 +141,60 @@ namespace HereticalSolutions.Memory.Tests
                     elementCapacity);
                 
                 //Operation and comparison
-                *(int*)(unmanagedArray[index]) = element1;
                 
-                Assert.AreEqual(*(int*)(unmanagedArray[index]), element1);
+                //Cache pointer and generic pointer to unmanaged array element
+                void* pointerToIndex = unmanagedArray[index];
                 
-                *(int*)(unmanagedArray[index]) = element2;
+                int* genericPointer = unmanagedArray.Get<int>(index);
                 
-                Assert.AreEqual(*(int*)(unmanagedArray[index]), element2);
                 
-                *(int*)(unmanagedArray[index]) = element3;
+                //Overwrite element at index with the input and perform assertions
+                OverwriteAndAssert(unmanagedArray, index, element1, pointerToIndex, genericPointer);
                 
-                Assert.AreEqual(*(int*)(unmanagedArray[index]), element3);
+                OverwriteAndAssert(unmanagedArray, index, element2, pointerToIndex, genericPointer);
+                
+                OverwriteAndAssert(unmanagedArray, index, element3, pointerToIndex, genericPointer);
                 
                 //Deallocation
                 Marshal.FreeHGlobal(pointer);
             }
+        }
+        
+        /// <summary>
+        /// Overwrite value in the unmanaged array at given index and perform assertions
+        /// </summary>
+        /// <param name="unmanagedArray">Unmanaged array</param>
+        /// <param name="index">Target index</param>
+        /// <param name="element">Element value</param>
+        /// <param name="pointerToIndex">Element pointer</param>
+        /// <param name="genericPointer">Generic element pointer</param>
+        private unsafe void OverwriteAndAssert(
+            UnmanagedArray unmanagedArray,
+            int index,
+            int element,
+            void* pointerToIndex,
+            int* genericPointer)
+        {
+            //Overwrite element
+            *(int*)(unmanagedArray[index]) = element;
+                
+            //Element obtained by indexer should be equal to the input
+            Assert.AreEqual(*(int*)(unmanagedArray[index]), element);
+            
+            //Element obtained by generic method should be equal to the input
+            Assert.AreEqual(*unmanagedArray.Get<int>(index), element);
+            
+            //Value behind pointer should be equal to the input
+            Assert.AreEqual(*(int*)pointerToIndex, element);
+            
+            //Value behind generic pointer should be equal to the input
+            Assert.AreEqual(*genericPointer, element);
+            
+            //Array index obtained from pointer should match the input
+            Assert.AreEqual(unmanagedArray.IndexOf(pointerToIndex), index);
+            
+            //Array index obtained from generic pointer should match the input
+            Assert.AreEqual(unmanagedArray.IndexOf<int>(genericPointer), index);
         }
         
         //Do not try this shit. It gives a green arrow on test run and even if test fails after await the green arrow remains
