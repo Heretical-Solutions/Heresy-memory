@@ -3,7 +3,7 @@ using System.Runtime.InteropServices;
 
 namespace HereticalSolutions.Memory.Tests
 {
-    public class PackedArrayTests
+    public class GenericPackedArrayTests
     {
         [TestCase(5, 1, 3, -5)]
         [TestCase(3, 0, -100, 100)]
@@ -26,13 +26,13 @@ namespace HereticalSolutions.Memory.Tests
                 
                 var allocationPointer2 = Marshal.AllocHGlobal(memorySize);
                 
-                PackedArray packedArray1 = new PackedArray(
+                GenericPackedArray packedArray1 = new GenericPackedArray(
                     (byte*) allocationPointer1,
                     memorySize,
                     elementSize,
                     elementCapacity);
                 
-                PackedArray packedArray2 = new PackedArray(
+                GenericPackedArray packedArray2 = new GenericPackedArray(
                     (byte*) allocationPointer2,
                     memorySize,
                     elementSize,
@@ -43,35 +43,35 @@ namespace HereticalSolutions.Memory.Tests
                 //Store elements in packedArray1
                 //Cache pointers to unmanaged array elements
                 
-                void* pointer1 = packedArray1.Pop();
+                ref int reference1 = ref packedArray1.Pop();
                 
-                *(int*)pointer1 = element1;
-                
-                
-                void* pointer2 = packedArray1.Pop();
-                
-                *(int*)pointer2 = element2;
+                reference1 = element1;
                 
                 
-                void* pointer3 = packedArray1.Pop();
+                ref int reference2 = ref packedArray1.Pop();
                 
-                *(int*)pointer3 = element3;
+                reference2 = element2;
+                
+                
+                ref int reference3 = ref packedArray1.Pop();
+                
+                reference3 = element3;
                 
                 
                 //Store elements in packedArray2
                 //Cache generic pointers to unmanaged array elements
                 
-                int* genericPointer1 = packedArray2.Pop<int>();
+                int* genericPointer1 = packedArray2.Pop();
                 
                 *genericPointer1 = element1;
                 
                 
-                int* genericPointer2 = packedArray2.Pop<int>();
+                int* genericPointer2 = packedArray2.Pop();
                 
                 *genericPointer2 = element2;
                 
                 
-                int* genericPointer3 = packedArray2.Pop<int>();
+                int* genericPointer3 = packedArray2.Pop();
                 
                 *genericPointer3 = element3;
                 

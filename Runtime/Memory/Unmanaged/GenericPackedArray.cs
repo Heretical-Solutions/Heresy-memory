@@ -162,6 +162,23 @@ namespace HereticalSolutions.Memory
         }
         
         /// <summary>
+        /// Pop a free element from the array
+        /// </summary>
+        /// <returns>Free element</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public TValue* Pop()
+        {
+            if (!HasFreeSpace)
+                throw new Exception("[PackedArray] No more space");
+            
+            var result = Get<T>(Count);
+            
+            Count++;
+            
+            return result;
+        }
+        
+        /// <summary>
         /// Push an element back to the array
         /// </summary>
         /// <param name="index">Element index</param>
