@@ -147,19 +147,19 @@ namespace HereticalSolutions.Collections.Tests
                 
                 
                 //Array indexes obtained from pointers should match the input
-                Assert.AreEqual(packedArray1.IndexOf(pointer1), 0);
+                Assert.AreEqual(packedArray1.IndexOfPointer(pointer1), 0);
                 
-                Assert.AreEqual(packedArray1.IndexOf(pointer2), 1);
+                Assert.AreEqual(packedArray1.IndexOfPointer(pointer2), 1);
                 
-                Assert.AreEqual(packedArray1.IndexOf(pointer3), 2);
+                Assert.AreEqual(packedArray1.IndexOfPointer(pointer3), 2);
                 
                 
                 //Array indexes obtained from generic pointers should match the input
-                Assert.AreEqual(packedArray2.IndexOf<int>(genericPointer1), 0);
+                Assert.AreEqual(packedArray2.IndexOfGeneric<int>(genericPointer1), 0);
                 
-                Assert.AreEqual(packedArray2.IndexOf<int>(genericPointer2), 1);
+                Assert.AreEqual(packedArray2.IndexOfGeneric<int>(genericPointer2), 1);
                 
-                Assert.AreEqual(packedArray2.IndexOf<int>(genericPointer3), 2);
+                Assert.AreEqual(packedArray2.IndexOfGeneric<int>(genericPointer3), 2);
                 
                 
                 //Deallocation
@@ -288,11 +288,11 @@ namespace HereticalSolutions.Collections.Tests
                 
                 
             //Array index obtained from pointer should be 0
-            Assert.AreEqual(packedArray1.IndexOf(pointer), 0);
+            Assert.AreEqual(packedArray1.IndexOfPointer(pointer), 0);
                 
                 
             //Array index obtained from generic pointer should be 0
-            Assert.AreEqual(packedArray2.IndexOf<int>(genericPointer), 0);
+            Assert.AreEqual(packedArray2.IndexOfGeneric<int>(genericPointer), 0);
                 
                 
             //Remove elements from packedArray1 and packedArray2
@@ -547,19 +547,19 @@ namespace HereticalSolutions.Collections.Tests
                 
                 
             //Array indexes obtained from pointers should be equal to the input
-            Assert.AreEqual(packedArray1.IndexOf(pointer1), 0);
+            Assert.AreEqual(packedArray1.IndexOfPointer(pointer1), 0);
             
-            Assert.AreEqual(packedArray1.IndexOf(pointer2), 1);
+            Assert.AreEqual(packedArray1.IndexOfPointer(pointer2), 1);
             
-            Assert.AreEqual(packedArray1.IndexOf(pointer3), 2);
+            Assert.AreEqual(packedArray1.IndexOfPointer(pointer3), 2);
                 
                 
             //Array indexes obtained from generic pointers should be equal to the input
-            Assert.AreEqual(packedArray2.IndexOf<int>(genericPointer1), 0);
+            Assert.AreEqual(packedArray2.IndexOfGeneric<int>(genericPointer1), 0);
             
-            Assert.AreEqual(packedArray2.IndexOf<int>(genericPointer2), 1);
+            Assert.AreEqual(packedArray2.IndexOfGeneric<int>(genericPointer2), 1);
             
-            Assert.AreEqual(packedArray2.IndexOf<int>(genericPointer3), 2);
+            Assert.AreEqual(packedArray2.IndexOfGeneric<int>(genericPointer3), 2);
             
             
             //Push popped elements back into packed arrays
@@ -648,23 +648,23 @@ namespace HereticalSolutions.Collections.Tests
                 
                 
             //Array indexes obtained from pointers should be equal to the input
-            Assert.AreEqual(packedArray1.IndexOf(pointer1), 0);
+            Assert.AreEqual(packedArray1.IndexOfPointer(pointer1), 0);
             
-            Assert.AreEqual(packedArray1.IndexOf(pointer2), 1);
+            Assert.AreEqual(packedArray1.IndexOfPointer(pointer2), 1);
             
-            Assert.AreEqual(packedArray1.IndexOf(pointer3), 2);
+            Assert.AreEqual(packedArray1.IndexOfPointer(pointer3), 2);
 
-			Assert.AreEqual(packedArray1.IndexOf(pointer), 2);
+			Assert.AreEqual(packedArray1.IndexOfPointer(pointer), 2);
                 
                 
             //Array indexes obtained from generic pointers should be equal to the input
-            Assert.AreEqual(packedArray2.IndexOf<int>(genericPointer1), 0);
+            Assert.AreEqual(packedArray2.IndexOfGeneric<int>(genericPointer1), 0);
             
-            Assert.AreEqual(packedArray2.IndexOf<int>(genericPointer2), 1);
+            Assert.AreEqual(packedArray2.IndexOfGeneric<int>(genericPointer2), 1);
             
-            Assert.AreEqual(packedArray2.IndexOf<int>(genericPointer3), 2);
+            Assert.AreEqual(packedArray2.IndexOfGeneric<int>(genericPointer3), 2);
 
-			Assert.AreEqual(packedArray2.IndexOf<int>(genericPointer), 2);
+			Assert.AreEqual(packedArray2.IndexOfGeneric<int>(genericPointer), 2);
         }
     }
 }
