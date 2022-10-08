@@ -2,14 +2,16 @@ using System;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
-namespace HereticalSolutions.Memory
+namespace HereticalSolutions.Collections.Unmanaged
 {
-    /// <summary>
-    /// An array stored in the unmanaged heap with Pop and Push methods
-    /// </summary>
-    [StructLayout(LayoutKind.Sequential)]
+	/// <summary>
+	/// An array stored in the unmanaged heap with Pop and Push methods
+	/// </summary>
+	[StructLayout(LayoutKind.Sequential)]
     public unsafe struct GenericPackedArray<TValue> where TValue : unmanaged
     {
+        #region Variables
+
         /// <summary>
         /// Pointer to the unmanaged heap memory the array is stored in
         /// </summary>
@@ -35,6 +37,8 @@ namespace HereticalSolutions.Memory
         /// </summary>
         public int Count;
         
+        #endregion
+
         /// <summary>
         /// Create the array. Its elements are initially undefined.
         /// </summary>
@@ -60,6 +64,8 @@ namespace HereticalSolutions.Memory
             Count = 0;
         }
         
+        #region Validation
+
         /// <summary>
         /// Is given index valid for the array
         /// </summary>
@@ -71,6 +77,10 @@ namespace HereticalSolutions.Memory
             return (index > -1) && (index < ElementCapacity);
         }
     
+        #endregion
+
+        #region Indexers
+
         /// <summary>
         /// Get a pointer to an element in the array
         /// </summary>
@@ -97,13 +107,17 @@ namespace HereticalSolutions.Memory
             }
         }
         
+        #endregion
+
+        #region Get
+
         /// <summary>
         /// Get a pointer to an element in the array
         /// </summary>
         /// <param name="index">Index of the element to get a pointer to</param>
         /// <returns>Element in the array at specified index</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public TValue* Get(int index)
+        public TValue* GetPointer(int index)
         {
             return MemoryPointer + index;
         }
@@ -114,24 +128,30 @@ namespace HereticalSolutions.Memory
         /// <param name="index">Index of the element to get a pointer to</param>
         /// <returns>Element in the array at specified index</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public TValue* Get(uint index)
+        public TValue* GetPointer(uint index)
         {
             return MemoryPointer + index;
         }
         
+        #endregion
+
+        #region Index of
+
         /// <summary>
         /// Get the element's index in the array
         /// </summary>
         /// <param name="element">Target element</param>
         /// <returns>Element index</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public int IndexOf(TValue* element)
+        public int IndexOfPointer(TValue* element)
         {
             var distance = element - MemoryPointer;
             
             return (int)distance;
         }
         
+        #endregion
+
         /// <summary>
         /// Does the array have any free elements?
         /// </summary>
@@ -144,18 +164,22 @@ namespace HereticalSolutions.Memory
             }
         }
         
+        #region Pop
+
         /// <summary>
         /// Pop a free element from the array
         /// </summary>
         /// <returns>Free element</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public ref TValue Pop()
+        public ref TValue Pop(out int index)
         {
             if (!HasFreeSpace)
                 throw new Exception("[PackedArray] No more space");
             
             ref TValue result = ref this[Count];
             
+            index = Count;
+
             Count++;
             
             return ref result;
@@ -166,25 +190,29 @@ namespace HereticalSolutions.Memory
         /// </summary>
         /// <returns>Free element</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public TValue* Pop()
+        public TValue* PopPointer()
         {
             if (!HasFreeSpace)
                 throw new Exception("[PackedArray] No more space");
             
-            var result = Get<T>(Count);
+            var result = GetPointer(Count);
             
             Count++;
             
             return result;
         }
         
+        #endregion
+
+        #region Push
+
         /// <summary>
         /// Push an element back to the array
         /// </summary>
         /// <param name="index">Element index</param>
         /// <returns>Index of the element that took the place of the pushed element</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public int Push(int index)
+        public int PushIndex(int index)
         {
             if (index < 0
                 || index >= Count)
@@ -217,7 +245,7 @@ namespace HereticalSolutions.Memory
         /// <param name="index">Element index</param>
         /// <returns>Index of the element that took the place of the pushed element</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public int Push(uint index)
+        public int PushIndex(uint index)
         {
             if (index < 0
                 || index >= Count)
@@ -243,18 +271,20 @@ namespace HereticalSolutions.Memory
                 
             return returnValue;
         }
-        
+
         /// <summary>
         /// Push an element back to the array
         /// </summary>
         /// <param name="element">Element to push</param>
         /// <returns>Index of the element that took the place of the pushed element</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public int Push(TValue* element)
+        public int PushPointer(TValue* element)
         {
-            int elementIndex = IndexOf(element);
+            int elementIndex = IndexOfPointer(element);
             
-            return Push(elementIndex);
+            return PushIndex(elementIndex);
         }
+
+        #endregion
     }   
 }

@@ -1,20 +1,22 @@
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
-namespace HereticalSolutions.Memory
+namespace HereticalSolutions.Collections.Unmanaged
 {
     /// <summary>
-    /// A generic array stored in the unmanaged heap
+    /// An array stored in the unmanaged heap
     /// Courtesy of http://JacksonDunstan.com/articles/3740
     /// Courtesy of https://github.com/bepu/bepuphysics2/blob/master/BepuUtilities/Memory/Buffer.cs
     /// </summary>
     [StructLayout(LayoutKind.Sequential)]
-    public unsafe struct UnmanagedGenericArray<TValue> where TValue : unmanaged
+    public unsafe struct UnmanagedArray
     {
+        #region Variables
+
         /// <summary>
         /// Pointer to the unmanaged heap memory the array is stored in
         /// </summary>
-        public TValue* MemoryPointer;
+        public byte* MemoryPointer;
         
         /// <summary>
         /// Unmanaged memory size in bytes
@@ -31,6 +33,8 @@ namespace HereticalSolutions.Memory
         /// </summary>
         public int ElementCapacity;
         
+        #endregion
+
         /// <summary>
         /// Create the array. Its elements are initially undefined.
         /// </summary>
@@ -39,8 +43,8 @@ namespace HereticalSolutions.Memory
         /// <param name="elementSize">The size of one element of the array in bytes</param>
         /// <param name="elementCapacity">Number of elements in the array</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public UnmanagedGenericArray(
-            TValue* memoryPointer,
+        public UnmanagedArray(
+            byte* memoryPointer,
             int memorySize,
             int elementSize,
             int elementCapacity)
@@ -54,6 +58,8 @@ namespace HereticalSolutions.Memory
             ElementCapacity = elementCapacity;
         }
     
+        #region Validation
+
         /// <summary>
         /// Is given index valid for the array
         /// </summary>
@@ -65,16 +71,20 @@ namespace HereticalSolutions.Memory
             return (index > -1) && (index < ElementCapacity);
         }
     
+        #endregion
+
+        #region Indexers
+
         /// <summary>
         /// Get a pointer to an element in the array
         /// </summary>
         /// <param name="index">Index of the element to get a pointer to</param>
-        public ref TValue this[int index]
+        public void* this[int index]
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get
             {
-                return ref MemoryPointer[index];
+                return MemoryPointer + ElementSize * index;
             }
         }
         
@@ -82,35 +92,58 @@ namespace HereticalSolutions.Memory
         /// Get a pointer to an element in the array
         /// </summary>
         /// <param name="index">Index of the element to get a pointer to</param>
-        public ref TValue this[uint index]
+        public void* this[uint index]
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get
             {
-                return ref MemoryPointer[index];
+                return MemoryPointer + ElementSize * index;
             }
         }
         
+        #endregion
+
+        #region Get (generic)
+
         /// <summary>
         /// Get a pointer to an element in the array
         /// </summary>
         /// <param name="index">Index of the element to get a pointer to</param>
+        /// <typeparam name="T">Element type</typeparam>
         /// <returns>Element in the array at specified index</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public TValue* Get(int index)
+        public T* GetGeneric<T>(int index) where T : unmanaged
         {
-            return MemoryPointer + index;
+            return (T*)(MemoryPointer + ElementSize * index);
         }
         
         /// <summary>
         /// Get a pointer to an element in the array
         /// </summary>
         /// <param name="index">Index of the element to get a pointer to</param>
+        /// <typeparam name="T">Element type</typeparam>
         /// <returns>Element in the array at specified index</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public TValue* Get(uint index)
+        public T* GetGeneric<T>(uint index) where T : unmanaged
         {
-            return MemoryPointer + index;
+            return (T*)(MemoryPointer + ElementSize * index);
+        }
+        
+        #endregion
+
+        #region Index of
+
+        /// <summary>
+        /// Get the element's index in the array
+        /// </summary>
+        /// <param name="element">Target element</param>
+        /// <returns>Element index</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public int IndexOfPointer(void* element)
+        {
+            long distance = (byte*)element - MemoryPointer;
+            
+            return (int)(distance / ElementSize);
         }
         
         /// <summary>
@@ -119,11 +152,13 @@ namespace HereticalSolutions.Memory
         /// <param name="element">Target element</param>
         /// <returns>Element index</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public int IndexOf(TValue* element)
+        public int IndexOfGeneric<T>(T* element) where T : unmanaged
         {
-            var distance = element - MemoryPointer;
+            long distance = (byte*)element - MemoryPointer;
             
-            return (int)distance;
+            return (int)(distance / ElementSize);
         }
+
+        #endregion
     }   
 }

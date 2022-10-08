@@ -2,14 +2,16 @@ using System;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
-namespace HereticalSolutions.Memory
+namespace HereticalSolutions.Collections.Unmanaged
 {
-    /// <summary>
-    /// An array stored in the unmanaged heap with Pop and Push methods
-    /// </summary>
-    [StructLayout(LayoutKind.Sequential)]
+	/// <summary>
+	/// An array stored in the unmanaged heap with Pop and Push methods
+	/// </summary>
+	[StructLayout(LayoutKind.Sequential)]
     public unsafe struct PackedArray
     {
+        #region Variables
+
         /// <summary>
         /// Pointer to the unmanaged heap memory the array is stored in
         /// </summary>
@@ -34,7 +36,9 @@ namespace HereticalSolutions.Memory
         /// The amount of elements currently allocated in the array
         /// </summary>
         public int Count;
-        
+
+        #endregion
+
         /// <summary>
         /// Create the array. Its elements are initially undefined.
         /// </summary>
@@ -60,6 +64,8 @@ namespace HereticalSolutions.Memory
             Count = 0;
         }
         
+        #region Validation
+
         /// <summary>
         /// Is given index valid for the array
         /// </summary>
@@ -71,6 +77,10 @@ namespace HereticalSolutions.Memory
             return (index > -1) && (index < ElementCapacity);
         }
     
+        #endregion
+
+        #region Indexers
+
         /// <summary>
         /// Get a pointer to an element in the array
         /// </summary>
@@ -96,6 +106,10 @@ namespace HereticalSolutions.Memory
                 return MemoryPointer + ElementSize * index;
             }
         }
+
+        #endregion
+
+        #region Get (generic)
         
         /// <summary>
         /// Get a pointer to an element in the array
@@ -104,7 +118,7 @@ namespace HereticalSolutions.Memory
         /// <typeparam name="T">Element type</typeparam>
         /// <returns>Element in the array at specified index</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public T* Get<T>(int index) where T : unmanaged
+        public T* GetGeneric<T>(int index) where T : unmanaged
         {
             return (T*)(MemoryPointer + ElementSize * index);
         }
@@ -116,10 +130,14 @@ namespace HereticalSolutions.Memory
         /// <typeparam name="T">Element type</typeparam>
         /// <returns>Element in the array at specified index</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public T* Get<T>(uint index) where T : unmanaged
+        public T* GetGeneric<T>(uint index) where T : unmanaged
         {
             return (T*)(MemoryPointer + ElementSize * index);
         }
+
+        #endregion
+
+        #region Index of
         
         /// <summary>
         /// Get the element's index in the array
@@ -147,6 +165,8 @@ namespace HereticalSolutions.Memory
             return (int)(distance / ElementSize);
         }
         
+        #endregion
+
         /// <summary>
         /// Does the array have any free elements?
         /// </summary>
@@ -159,12 +179,14 @@ namespace HereticalSolutions.Memory
             }
         }
         
+        #region Pop
+
         /// <summary>
         /// Pop a free element from the array
         /// </summary>
         /// <returns>Free element</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void* Pop()
+        public void* PopPointer()
         {
             if (!HasFreeSpace)
                 throw new Exception("[PackedArray] No more space");
@@ -181,25 +203,29 @@ namespace HereticalSolutions.Memory
         /// </summary>
         /// <returns>Free element</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public T* Pop<T>() where T: unmanaged
+        public T* PopGeneric<T>() where T: unmanaged
         {
             if (!HasFreeSpace)
                 throw new Exception("[PackedArray] No more space");
             
-            var result = Get<T>(Count);
+            var result = GetGeneric<T>(Count);
             
             Count++;
             
             return result;
         }
         
+        #endregion
+
+        #region Push
+
         /// <summary>
         /// Push an element back to the array
         /// </summary>
         /// <param name="index">Element index</param>
         /// <returns>Index of the element that took the place of the pushed element</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public int Push(int index)
+        public int PushIndex(int index)
         {
             if (index < 0
                 || index >= Count)
@@ -232,7 +258,7 @@ namespace HereticalSolutions.Memory
         /// <param name="index">Element index</param>
         /// <returns>Index of the element that took the place of the pushed element</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public int Push(uint index)
+        public int PushIndex(uint index)
         {
             if (index < 0
                 || index >= Count)
@@ -265,11 +291,11 @@ namespace HereticalSolutions.Memory
         /// <param name="element">Element to push</param>
         /// <returns>Index of the element that took the place of the pushed element</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public int Push(void* element)
+        public int PushPointer(void* element)
         {
             int elementIndex = IndexOf(element);
             
-            return Push(elementIndex);
+            return PushIndex(elementIndex);
         }
         
         /// <summary>
@@ -279,11 +305,13 @@ namespace HereticalSolutions.Memory
         /// <typeparam name="T">Element type</typeparam>
         /// <returns>Index of the element that took the place of the pushed element</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public int Push<T>(T* element) where T: unmanaged
+        public int PushGeneric<T>(T* element) where T: unmanaged
         {
             int elementIndex = IndexOf<T>(element);
             
-            return Push(elementIndex);
+            return PushIndex(elementIndex);
         }
+
+        #endregion
     }   
 }

@@ -1,7 +1,9 @@
+using System;
 using NUnit.Framework;
 using System.Runtime.InteropServices;
+using HereticalSolutions.Collections.Unmanaged;
 
-namespace HereticalSolutions.Memory.Tests
+namespace HereticalSolutions.Collections.Tests
 {
     public class GenericPackedArrayTests
     {
@@ -22,18 +24,18 @@ namespace HereticalSolutions.Memory.Tests
                 
                 int memorySize = elementSize * elementCapacity;
                 
-                var allocationPointer1 = Marshal.AllocHGlobal(memorySize);
+                var allocationPointer1 = (int*)Marshal.AllocHGlobal(memorySize);
                 
-                var allocationPointer2 = Marshal.AllocHGlobal(memorySize);
-                
-                GenericPackedArray packedArray1 = new GenericPackedArray(
-                    (byte*) allocationPointer1,
+                var allocationPointer2 = (int*)Marshal.AllocHGlobal(memorySize);
+
+                GenericPackedArray<int> packedArray1 = new GenericPackedArray<int>(
+                    allocationPointer1,
                     memorySize,
                     elementSize,
                     elementCapacity);
                 
-                GenericPackedArray packedArray2 = new GenericPackedArray(
-                    (byte*) allocationPointer2,
+                GenericPackedArray<int> packedArray2 = new GenericPackedArray<int>(
+                    allocationPointer2,
                     memorySize,
                     elementSize,
                     elementCapacity);
@@ -41,39 +43,39 @@ namespace HereticalSolutions.Memory.Tests
                 //Operation
                 
                 //Store elements in packedArray1
-                //Cache pointers to unmanaged array elements
+                //Cache references to unmanaged array elements
                 
-                ref int reference1 = ref packedArray1.Pop();
+                ref int reference1 = ref packedArray1.Pop(out int referenceIndex1);
                 
                 reference1 = element1;
                 
                 
-                ref int reference2 = ref packedArray1.Pop();
+                ref int reference2 = ref packedArray1.Pop(out int referenceIndex2);
                 
                 reference2 = element2;
                 
                 
-                ref int reference3 = ref packedArray1.Pop();
+                ref int reference3 = ref packedArray1.Pop(out int referenceIndex3);
                 
                 reference3 = element3;
                 
                 
                 //Store elements in packedArray2
-                //Cache generic pointers to unmanaged array elements
+                //Cache pointers to unmanaged array elements
                 
-                int* genericPointer1 = packedArray2.Pop();
+                int* pointer1 = packedArray2.PopPointer();
                 
-                *genericPointer1 = element1;
-                
-                
-                int* genericPointer2 = packedArray2.Pop();
-                
-                *genericPointer2 = element2;
+                *pointer1 = element1;
                 
                 
-                int* genericPointer3 = packedArray2.Pop();
+                int* pointer2 = packedArray2.PopPointer();
                 
-                *genericPointer3 = element3;
+                *pointer2 = element2;
+                
+                
+                int* pointer3 = packedArray2.PopPointer();
+                
+                *pointer3 = element3;
                 
                 
                 //Comparison
@@ -100,71 +102,71 @@ namespace HereticalSolutions.Memory.Tests
                 
                 
                 //Elements obtained by indexer should be equal to the input
-                Assert.AreEqual(*(int*)(packedArray1[0]), element1);
+                Assert.AreEqual(packedArray1[0], element1);
                 
-                Assert.AreEqual(*(int*)(packedArray1[1]), element2);
+                Assert.AreEqual(packedArray1[1], element2);
                 
-                Assert.AreEqual(*(int*)(packedArray1[2]), element3);
-                
-                
-                Assert.AreEqual(*(int*)(packedArray2[0]), element1);
-                
-                Assert.AreEqual(*(int*)(packedArray2[1]), element2);
-                
-                Assert.AreEqual(*(int*)(packedArray2[2]), element3);
+                Assert.AreEqual(packedArray1[2], element3);
                 
                 
-                //Elements obtained by generic method should be equal to the input
-                Assert.AreEqual(*packedArray1.Get<int>(0), element1);
+                Assert.AreEqual(packedArray2[0], element1);
                 
-                Assert.AreEqual(*packedArray1.Get<int>(1), element2);
+                Assert.AreEqual(packedArray2[1], element2);
                 
-                Assert.AreEqual(*packedArray1.Get<int>(2), element3);
+                Assert.AreEqual(packedArray2[2], element3);
                 
                 
-                Assert.AreEqual(*packedArray2.Get<int>(0), element1);
+                //Elements obtained by pointer method should be equal to the input
+                Assert.AreEqual(*packedArray1.GetPointer(0), element1);
                 
-                Assert.AreEqual(*packedArray2.Get<int>(1), element2);
+                Assert.AreEqual(*packedArray1.GetPointer(1), element2);
                 
-                Assert.AreEqual(*packedArray2.Get<int>(2), element3);
+                Assert.AreEqual(*packedArray1.GetPointer(2), element3);
+                
+                
+                Assert.AreEqual(*packedArray2.GetPointer(0), element1);
+                
+                Assert.AreEqual(*packedArray2.GetPointer(1), element2);
+                
+                Assert.AreEqual(*packedArray2.GetPointer(2), element3);
+                
+                
+                //Values behind references should be equal to the input
+                Assert.AreEqual(reference1, element1);
+                
+                Assert.AreEqual(reference2, element2);
+                
+                Assert.AreEqual(reference3, element3);
                 
                 
                 //Values behind pointers should be equal to the input
-                Assert.AreEqual(*(int*)pointer1, element1);
+                Assert.AreEqual(*pointer1, element1);
                 
-                Assert.AreEqual(*(int*)pointer2, element2);
+                Assert.AreEqual(*pointer2, element2);
                 
-                Assert.AreEqual(*(int*)pointer3, element3);
-                
-                
-                //Values behind generic pointers should be equal to the input
-                Assert.AreEqual(*genericPointer1, element1);
-                
-                Assert.AreEqual(*genericPointer2, element2);
-                
-                Assert.AreEqual(*genericPointer3, element3);
-                
+                Assert.AreEqual(*pointer3, element3);
+
+
+				//Array indexes obtained from references should match the input
+				Assert.AreEqual(referenceIndex1, 0);
+
+				Assert.AreEqual(referenceIndex2, 1);
+
+				Assert.AreEqual(referenceIndex3, 2);
+
                 
                 //Array indexes obtained from pointers should match the input
-                Assert.AreEqual(packedArray1.IndexOf(pointer1), 0);
+                Assert.AreEqual(packedArray2.IndexOfPointer(pointer1), 0);
                 
-                Assert.AreEqual(packedArray1.IndexOf(pointer2), 1);
+                Assert.AreEqual(packedArray2.IndexOfPointer(pointer2), 1);
                 
-                Assert.AreEqual(packedArray1.IndexOf(pointer3), 2);
-                
-                
-                //Array indexes obtained from generic pointers should match the input
-                Assert.AreEqual(packedArray2.IndexOf<int>(genericPointer1), 0);
-                
-                Assert.AreEqual(packedArray2.IndexOf<int>(genericPointer2), 1);
-                
-                Assert.AreEqual(packedArray2.IndexOf<int>(genericPointer3), 2);
+                Assert.AreEqual(packedArray2.IndexOfPointer(pointer3), 2);
                 
                 
                 //Deallocation
-                Marshal.FreeHGlobal(allocationPointer1);
+                Marshal.FreeHGlobal((IntPtr)allocationPointer1);
                 
-                Marshal.FreeHGlobal(allocationPointer2);
+                Marshal.FreeHGlobal((IntPtr)allocationPointer2);
             }
         }
         
@@ -185,18 +187,18 @@ namespace HereticalSolutions.Memory.Tests
                 
                 int memorySize = elementSize * elementCapacity;
                 
-                var allocationPointer1 = Marshal.AllocHGlobal(memorySize);
+                var allocationPointer1 = (int*)Marshal.AllocHGlobal(memorySize);
                 
-                var allocationPointer2 = Marshal.AllocHGlobal(memorySize);
+                var allocationPointer2 = (int*)Marshal.AllocHGlobal(memorySize);
                 
-                PackedArray packedArray1 = new PackedArray(
-                    (byte*) allocationPointer1,
+                GenericPackedArray<int> packedArray1 = new GenericPackedArray<int>(
+                    allocationPointer1,
                     memorySize,
                     elementSize,
                     elementCapacity);
                 
-                PackedArray packedArray2 = new PackedArray(
-                    (byte*) allocationPointer2,
+                GenericPackedArray<int> packedArray2 = new GenericPackedArray<int>(
+                    allocationPointer2,
                     memorySize,
                     elementSize,
                     elementCapacity);
@@ -211,9 +213,9 @@ namespace HereticalSolutions.Memory.Tests
                 PushAssertPopAssert(packedArray1, packedArray2, arraySize, element3);
                 
                 //Deallocation
-                Marshal.FreeHGlobal(allocationPointer1);
+                Marshal.FreeHGlobal((IntPtr)allocationPointer1);
                 
-                Marshal.FreeHGlobal(allocationPointer2);
+                Marshal.FreeHGlobal((IntPtr)allocationPointer2);
             }
         }
         
@@ -225,25 +227,25 @@ namespace HereticalSolutions.Memory.Tests
         /// <param name="arraySize">Array size</param>
         /// <param name="element">Element value</param>
         private unsafe void PushAssertPopAssert(
-            PackedArray packedArray1,
-            PackedArray packedArray2,
+            GenericPackedArray<int> packedArray1,
+            GenericPackedArray<int> packedArray2,
             int arraySize,
             int element)
         {
             //Store element1 in packedArray1
             //Cache pointer to unmanaged array element
                 
-            void* pointer = packedArray1.Pop();
-                
-            *(int*)pointer = element;
+            ref int reference = ref packedArray1.Pop(out int referenceIndex);
+
+			reference = element;
                 
                 
             //Store element1 in packedArray2
-            //Cache generic pointer to unmanaged array element
+            //Cache pointer to unmanaged array element
                 
-            int* genericPointer = packedArray2.Pop<int>();
+            int* pointer = packedArray2.PopPointer();
                 
-            *genericPointer = element;
+            *pointer = element;
                 
                 
             //Count of elements stored should be equal to 1
@@ -267,37 +269,37 @@ namespace HereticalSolutions.Memory.Tests
             }
                 
             //Element obtained by indexer should be equal to the input
-            Assert.AreEqual(*(int*)(packedArray1[0]), element);
+            Assert.AreEqual(packedArray1[0], element);
                 
-            Assert.AreEqual(*(int*)(packedArray2[0]), element);
+            Assert.AreEqual(packedArray2[0], element);
                 
                 
-            //Element obtained by generic method should be equal to the input
-            Assert.AreEqual(*packedArray1.Get<int>(0), element);
+            //Element obtained by pointer method should be equal to the input
+            Assert.AreEqual(*packedArray1.GetPointer(0), element);
                 
-            Assert.AreEqual(*packedArray2.Get<int>(0), element);
+            Assert.AreEqual(*packedArray2.GetPointer(0), element);
+                
+                
+            //Value behind reference should be equal to the input
+            Assert.AreEqual(reference, element);
                 
                 
             //Value behind pointer should be equal to the input
-            Assert.AreEqual(*(int*)pointer, element);
-                
-                
-            //Value behind generic pointer should be equal to the input
-            Assert.AreEqual(*genericPointer, element);
-                
-                
+            Assert.AreEqual(*pointer, element);
+
+
+			//Array index obtained from reference should be 0
+			Assert.AreEqual(referenceIndex, 0);
+
+            
             //Array index obtained from pointer should be 0
-            Assert.AreEqual(packedArray1.IndexOf(pointer), 0);
-                
-                
-            //Array index obtained from generic pointer should be 0
-            Assert.AreEqual(packedArray2.IndexOf<int>(genericPointer), 0);
+            Assert.AreEqual(packedArray2.IndexOfPointer(pointer), 0);
                 
                 
             //Remove elements from packedArray1 and packedArray2
-            packedArray1.Push(pointer);
+            packedArray1.PushIndex(referenceIndex);
                 
-            packedArray2.Push<int>(genericPointer);
+            packedArray2.PushPointer(pointer);
                 
                 
             //Count of elements stored should be equal to 0
@@ -329,18 +331,18 @@ namespace HereticalSolutions.Memory.Tests
                 
                 int memorySize = elementSize * elementCapacity;
                 
-                var allocationPointer1 = Marshal.AllocHGlobal(memorySize);
+                var allocationPointer1 = (int*)Marshal.AllocHGlobal(memorySize);
                 
-                var allocationPointer2 = Marshal.AllocHGlobal(memorySize);
+                var allocationPointer2 = (int*)Marshal.AllocHGlobal(memorySize);
                 
-                PackedArray packedArray1 = new PackedArray(
-                    (byte*) allocationPointer1,
+                GenericPackedArray<int> packedArray1 = new GenericPackedArray<int>(
+                    allocationPointer1,
                     memorySize,
                     elementSize,
                     elementCapacity);
                 
-                PackedArray packedArray2 = new PackedArray(
-                    (byte*) allocationPointer2,
+                GenericPackedArray<int> packedArray2 = new GenericPackedArray<int>(
+                    allocationPointer2,
                     memorySize,
                     elementSize,
                     elementCapacity);
@@ -350,37 +352,37 @@ namespace HereticalSolutions.Memory.Tests
                 //Store elements in packedArray1
                 //Cache pointers to unmanaged array elements
                 
-                void* pointer1 = packedArray1.Pop();
+                ref int reference1 = ref packedArray1.Pop(out int referenceIndex1);
                 
-                *(int*)pointer1 = element1;
-                
-                
-                void* pointer2 = packedArray1.Pop();
-                
-                *(int*)pointer2 = element2;
+                reference1 = element1;
                 
                 
-                void* pointer3 = packedArray1.Pop();
+                ref int reference2 = ref packedArray1.Pop(out int referenceIndex2);
                 
-                *(int*)pointer3 = element3;
+                reference2 = element2;
+                
+                
+                ref int reference3 = ref packedArray1.Pop(out int referenceIndex3);
+                
+                reference3 = element3;
                 
                 
                 //Store elements in packedArray2
-                //Cache generic pointers to unmanaged array elements
+                //Cache pointers to unmanaged array elements
                 
-                int* genericPointer1 = packedArray2.Pop<int>();
+                int* pointer1 = packedArray2.PopPointer();
                 
-                *genericPointer1 = element1;
-                
-                
-                int* genericPointer2 = packedArray2.Pop<int>();
-                
-                *genericPointer2 = element2;
+                *pointer1 = element1;
                 
                 
-                int* genericPointer3 = packedArray2.Pop<int>();
+                int* pointer2 = packedArray2.PopPointer();
                 
-                *genericPointer3 = element3;
+                *pointer2 = element2;
+                
+                
+                int* pointer3 = packedArray2.PopPointer();
+                
+                *pointer3 = element3;
                 
                 
                 //Pop/push elements in the arrays and perform assertions
@@ -391,13 +393,17 @@ namespace HereticalSolutions.Memory.Tests
                     
                     1,
                     
+                    ref reference1,
+                    ref reference2,
+                    ref reference3,
+
+                    referenceIndex1,
+					referenceIndex2,
+					referenceIndex3,
+                    
                     pointer1,
                     pointer2,
                     pointer3,
-                    
-                    genericPointer1,
-                    genericPointer2,
-                    genericPointer3,
                     
                     element1,
                     element3,
@@ -409,14 +415,18 @@ namespace HereticalSolutions.Memory.Tests
                     arraySize,
                     
                     0,
+
+					ref reference1,
+					ref reference2,
+					ref reference3,
+
+					referenceIndex1,
+					referenceIndex2,
+					referenceIndex3,
                     
                     pointer1,
                     pointer2,
                     pointer3,
-                    
-                    genericPointer1,
-                    genericPointer2,
-                    genericPointer3,
                     
                     element2,
                     element3,
@@ -428,14 +438,18 @@ namespace HereticalSolutions.Memory.Tests
                     arraySize,
                     
                     2,
+
+					ref reference1,
+					ref reference2,
+					ref reference3,
+
+					referenceIndex1,
+					referenceIndex2,
+					referenceIndex3,
                     
                     pointer1,
                     pointer2,
                     pointer3,
-                    
-                    genericPointer1,
-                    genericPointer2,
-                    genericPointer3,
                     
                     element2,
                     element3,
@@ -443,9 +457,9 @@ namespace HereticalSolutions.Memory.Tests
                 
                 
                 //Deallocation
-                Marshal.FreeHGlobal(allocationPointer1);
+                Marshal.FreeHGlobal((IntPtr)allocationPointer1);
                 
-                Marshal.FreeHGlobal(allocationPointer2);
+                Marshal.FreeHGlobal((IntPtr)allocationPointer2);
             }
         }
         
@@ -460,19 +474,23 @@ namespace HereticalSolutions.Memory.Tests
         /// <param name="expectedElement2">Expected value of element 2 after the push</param>
         /// <param name="expectedElement3">Expected value of element 3 after the push</param>
         private unsafe void PopAssertPushAssert(
-            PackedArray packedArray1,
-            PackedArray packedArray2,
+            GenericPackedArray<int> packedArray1,
+            GenericPackedArray<int> packedArray2,
             
             int arraySize,
             int index,
             
-            void* pointer1,
-            void* pointer2,
-            void* pointer3,
+            ref int reference1,
+            ref int reference2,
+            ref int reference3,
+
+            int referenceIndex1,
+			int referenceIndex2,
+			int referenceIndex3,
             
-            int* genericPointer1,
-            int* genericPointer2,
-            int* genericPointer3,
+            int* pointer1,
+            int* pointer2,
+            int* pointer3,
             
             int expectedElement1,
             int expectedElement2,
@@ -480,21 +498,21 @@ namespace HereticalSolutions.Memory.Tests
         {
             //Pop elements by target index in packed arrays
             //Return values should be equal to 2 (assuming there were only 3 elements stored)
-            int returnValue1 = packedArray1.Push(
+            int returnValue1 = packedArray1.PushIndex(
                 (index == 0)
-                    ? pointer1 
+                    ? referenceIndex1 
                     : (index == 1)
-                        ? pointer2
-                        : pointer3);
+                        ? referenceIndex2
+                        : referenceIndex3);
             
             Assert.AreEqual(returnValue1, (index == 2) ? -1 : 2);
             
-            int returnValue2 = packedArray2.Push<int>(
+            int returnValue2 = packedArray2.PushPointer(
                 (index == 0)
-                    ? genericPointer1
+                    ? pointer1
                     : (index == 1)
-                        ? genericPointer2
-                        : genericPointer3);
+                        ? pointer2
+                        : pointer3);
             
             Assert.AreEqual(returnValue2, (index == 2) ? -1 : 2);
             
@@ -512,67 +530,67 @@ namespace HereticalSolutions.Memory.Tests
             
                 
             //Elements obtained by indexer should be equal to the input
-            Assert.AreEqual(*(int*)(packedArray1[0]), expectedElement1);
+            Assert.AreEqual(packedArray1[0], expectedElement1);
             
-            Assert.AreEqual(*(int*)(packedArray1[1]), expectedElement2);
-            
-            
-            Assert.AreEqual(*(int*)(packedArray2[0]), expectedElement1);
-            
-            Assert.AreEqual(*(int*)(packedArray2[1]), expectedElement2);
+            Assert.AreEqual(packedArray1[1], expectedElement2);
             
             
-            //Elements obtained by generic method should be equal to the input
-            Assert.AreEqual(*packedArray1.Get<int>(0), expectedElement1);
+            Assert.AreEqual(packedArray2[0], expectedElement1);
             
-            Assert.AreEqual(*packedArray1.Get<int>(1), expectedElement2);
+            Assert.AreEqual(packedArray2[1], expectedElement2);
             
             
-            Assert.AreEqual(*packedArray2.Get<int>(0), expectedElement1);
+            //Elements obtained by pointer method should be equal to the input
+            Assert.AreEqual(*packedArray1.GetPointer(0), expectedElement1);
             
-            Assert.AreEqual(*packedArray2.Get<int>(1), expectedElement2);
+            Assert.AreEqual(*packedArray1.GetPointer(1), expectedElement2);
+            
+            
+            Assert.AreEqual(*packedArray2.GetPointer(0), expectedElement1);
+            
+            Assert.AreEqual(*packedArray2.GetPointer(1), expectedElement2);
                 
                 
-            //Values behind pointers should be equal to the input
-            Assert.AreEqual(*(int*)pointer1, expectedElement1);
+            //Values behind references should be equal to the input
+            Assert.AreEqual(reference1, expectedElement1);
             
-            Assert.AreEqual(*(int*)pointer2, expectedElement2);
+            Assert.AreEqual(reference2, expectedElement2);
                 
                 
-            //Value behind generic pointer should be equal to the input
-            Assert.AreEqual(*genericPointer1, expectedElement1);
+            //Value behind pointers should be equal to the input
+            Assert.AreEqual(*pointer1, expectedElement1);
             
-            Assert.AreEqual(*genericPointer2, expectedElement2);
-                
-                
+            Assert.AreEqual(*pointer2, expectedElement2);
+
+
+			//Array indexes obtained from pointers should be equal to the input
+			Assert.AreEqual(referenceIndex1, 0);
+
+			Assert.AreEqual(referenceIndex2, 1);
+
+			Assert.AreEqual(referenceIndex3, 2);
+            
+
             //Array indexes obtained from pointers should be equal to the input
-            Assert.AreEqual(packedArray1.IndexOf(pointer1), 0);
+            Assert.AreEqual(packedArray2.IndexOfPointer(pointer1), 0);
             
-            Assert.AreEqual(packedArray1.IndexOf(pointer2), 1);
+            Assert.AreEqual(packedArray2.IndexOfPointer(pointer2), 1);
             
-            Assert.AreEqual(packedArray1.IndexOf(pointer3), 2);
-                
-                
-            //Array indexes obtained from generic pointers should be equal to the input
-            Assert.AreEqual(packedArray2.IndexOf<int>(genericPointer1), 0);
-            
-            Assert.AreEqual(packedArray2.IndexOf<int>(genericPointer2), 1);
-            
-            Assert.AreEqual(packedArray2.IndexOf<int>(genericPointer3), 2);
+            Assert.AreEqual(packedArray2.IndexOfPointer(pointer3), 2);
             
             
             //Push popped elements back into packed arrays
             
             //Cache pointer to unmanaged array element
-            void* pointer = packedArray1.Pop();
-                
-            *(int*)pointer = expectedElement3;
+            ref int reference = ref packedArray1.Pop(out int referenceIndex);
+
+			reference = expectedElement3;
             
-            //Cache generic pointer to unmanaged array element
+            //Cache pointer to unmanaged array element
                 
-            int* genericPointer = packedArray2.Pop<int>();
+            int* pointer = packedArray2.PopPointer();
                 
-            *genericPointer = expectedElement3;
+            *pointer = expectedElement3;
             
                 
             //Count of elements stored should be equal to 3 (assuming there were only 3 elements stored)
@@ -597,69 +615,73 @@ namespace HereticalSolutions.Memory.Tests
             
                 
             //Elements obtained by indexer should be equal to the input
-            Assert.AreEqual(*(int*)(packedArray1[0]), expectedElement1);
+            Assert.AreEqual(packedArray1[0], expectedElement1);
             
-            Assert.AreEqual(*(int*)(packedArray1[1]), expectedElement2);
+            Assert.AreEqual(packedArray1[1], expectedElement2);
             
-            Assert.AreEqual(*(int*)(packedArray1[2]), expectedElement3);
-            
-            
-            Assert.AreEqual(*(int*)(packedArray2[0]), expectedElement1);
-            
-            Assert.AreEqual(*(int*)(packedArray2[1]), expectedElement2);
-            
-            Assert.AreEqual(*(int*)(packedArray2[2]), expectedElement3);
+            Assert.AreEqual(packedArray1[2], expectedElement3);
             
             
-            //Elements obtained by generic method should be equal to the input
-            Assert.AreEqual(*packedArray1.Get<int>(0), expectedElement1);
+            Assert.AreEqual(packedArray2[0], expectedElement1);
             
-            Assert.AreEqual(*packedArray1.Get<int>(1), expectedElement2);
+            Assert.AreEqual(packedArray2[1], expectedElement2);
             
-            Assert.AreEqual(*packedArray1.Get<int>(2), expectedElement3);
+            Assert.AreEqual(packedArray2[2], expectedElement3);
             
             
-            Assert.AreEqual(*packedArray2.Get<int>(0), expectedElement1);
+            //Elements obtained by pointer method should be equal to the input
+            Assert.AreEqual(*packedArray1.GetPointer(0), expectedElement1);
             
-            Assert.AreEqual(*packedArray2.Get<int>(1), expectedElement2);
+            Assert.AreEqual(*packedArray1.GetPointer(1), expectedElement2);
             
-            Assert.AreEqual(*packedArray2.Get<int>(2), expectedElement3);
+            Assert.AreEqual(*packedArray1.GetPointer(2), expectedElement3);
+            
+            
+            Assert.AreEqual(*packedArray2.GetPointer(0), expectedElement1);
+            
+            Assert.AreEqual(*packedArray2.GetPointer(1), expectedElement2);
+            
+            Assert.AreEqual(*packedArray2.GetPointer(2), expectedElement3);
                 
                 
-            //Values behind pointers should be equal to the input
-            Assert.AreEqual(*(int*)pointer1, expectedElement1);
+            //Values behind references should be equal to the input
+            Assert.AreEqual(reference1, expectedElement1);
             
-            Assert.AreEqual(*(int*)pointer2, expectedElement2);
+            Assert.AreEqual(reference2, expectedElement2);
             
-            Assert.AreEqual(*(int*)pointer3, expectedElement3);
+            Assert.AreEqual(reference3, expectedElement3);
             
-            Assert.AreEqual(*(int*)pointer, expectedElement3);
+            Assert.AreEqual(reference, expectedElement3);
                 
                 
-            //Value behind generic pointer should be equal to the input
-            Assert.AreEqual(*genericPointer1, expectedElement1);
+            //Value behind pointers should be equal to the input
+            Assert.AreEqual(*pointer1, expectedElement1);
             
-            Assert.AreEqual(*genericPointer2, expectedElement2);
+            Assert.AreEqual(*pointer2, expectedElement2);
             
-            Assert.AreEqual(*genericPointer3, expectedElement3);
+            Assert.AreEqual(*pointer3, expectedElement3);
             
-            Assert.AreEqual(*genericPointer, expectedElement3);
+            Assert.AreEqual(*pointer, expectedElement3);
+                
+                
+            //Array indexes obtained from references should be equal to the input
+            Assert.AreEqual(referenceIndex1, 0);
+            
+            Assert.AreEqual(referenceIndex2, 1);
+            
+            Assert.AreEqual(referenceIndex3, 2);
+
+			Assert.AreEqual(referenceIndex, 2);
                 
                 
             //Array indexes obtained from pointers should be equal to the input
-            Assert.AreEqual(packedArray1.IndexOf(pointer1), 0);
+            Assert.AreEqual(packedArray2.IndexOfPointer(pointer1), 0);
             
-            Assert.AreEqual(packedArray1.IndexOf(pointer2), 1);
+            Assert.AreEqual(packedArray2.IndexOfPointer(pointer2), 1);
             
-            Assert.AreEqual(packedArray1.IndexOf(pointer3), 2);
-                
-                
-            //Array indexes obtained from generic pointers should be equal to the input
-            Assert.AreEqual(packedArray2.IndexOf<int>(genericPointer1), 0);
-            
-            Assert.AreEqual(packedArray2.IndexOf<int>(genericPointer2), 1);
-            
-            Assert.AreEqual(packedArray2.IndexOf<int>(genericPointer3), 2);
+            Assert.AreEqual(packedArray2.IndexOfPointer(pointer3), 2);
+
+			Assert.AreEqual(packedArray2.IndexOfPointer(pointer), 2);
         }
     }
 }

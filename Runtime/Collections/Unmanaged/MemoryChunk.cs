@@ -9,6 +9,8 @@ namespace HereticalSolutions.Memory
     [StructLayout(LayoutKind.Sequential)]
     public unsafe struct MemoryChunk
     {
+        #region Variables
+
         /// <summary>
         /// Pointer to the unmanaged heap memory the array is stored in
         /// </summary>
@@ -19,6 +21,8 @@ namespace HereticalSolutions.Memory
         /// </summary>
         public int MemorySize;
         
+        #endregion
+
         /// <summary>
         /// Create the chunk. Its contents are initially undefined.
         /// </summary>
