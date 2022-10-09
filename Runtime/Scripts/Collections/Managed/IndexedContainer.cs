@@ -1,9 +1,15 @@
 namespace HereticalSolutions.Collections.Managed
 {
-	public class IndexedContainer<T>
+	public class IndexedContainer<T> : IPoolElement<T>
 	{
 		public int Index = -1;
 
-		public T Value = default(T);
+		public T Value { get; set; } = default(T);
+
+		public IndexedContainer(
+			T initialValue)
+		{
+			Value = initialValue;
+		}
 	}
 }

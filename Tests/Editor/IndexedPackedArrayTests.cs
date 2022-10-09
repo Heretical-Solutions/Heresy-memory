@@ -1,8 +1,7 @@
 using NUnit.Framework;
-using System.Runtime.InteropServices;
-using HereticalSolutions.Collections.Unmanaged;
 using HereticalSolutions.Collections.Factories;
 using HereticalSolutions.Collections.Managed;
+using HereticalSolutions.Allocations;
 
 namespace HereticalSolutions.Collections.Tests
 {
@@ -18,7 +17,12 @@ namespace HereticalSolutions.Collections.Tests
 		{
 				//Allocation
 				IndexedPackedArray<int> packedArray = CollectionFactory.BuildIndexedPackedArray<int>(
-					arraySize);
+					new AllocationCommand<int>
+					{
+						Rule = EAllocationAmountRule.ADD_PREDEFINED_AMOUNT,
+						AllocationDelegate = () => { return -1; },
+						Amount = arraySize
+					});
 
 				//Operation
 
@@ -82,7 +86,12 @@ namespace HereticalSolutions.Collections.Tests
 		{
 				//Allocation
 				IndexedPackedArray<int> packedArray = CollectionFactory.BuildIndexedPackedArray<int>(
-					arraySize);
+					new AllocationCommand<int>
+					{
+						Rule = EAllocationAmountRule.ADD_PREDEFINED_AMOUNT,
+						AllocationDelegate = () => { return -1; },
+						Amount = arraySize
+					});
 
 				//Operation and comparison
 
@@ -156,7 +165,12 @@ namespace HereticalSolutions.Collections.Tests
 		{
 				//Allocation
 				IndexedPackedArray<int> packedArray = CollectionFactory.BuildIndexedPackedArray<int>(
-					arraySize);
+					new AllocationCommand<int>
+					{
+						Rule = EAllocationAmountRule.ADD_PREDEFINED_AMOUNT,
+						AllocationDelegate = () => { return -1; },
+						Amount = arraySize
+					});
 
 				//Operation and comparison
 

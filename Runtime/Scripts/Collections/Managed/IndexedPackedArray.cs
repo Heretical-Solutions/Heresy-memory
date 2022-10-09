@@ -1,4 +1,5 @@
 using System;
+using HereticalSolutions.Allocations.Internal;
 
 namespace HereticalSolutions.Collections.Managed
 {
@@ -11,8 +12,12 @@ namespace HereticalSolutions.Collections.Managed
     /// </summary>
     /// <typeparam name="T">Type of the objects stored in the container</typeparam>
     public class IndexedPackedArray<T>
+        : IContentsRetrievable<IndexedContainer<T>[]>,
+		  IContentsModifiable<IndexedContainer<T>[]>
     {
         private IndexedContainer<T>[] contents;
+
+        public IndexedContainer<T>[] Contents { get { return contents; } }
 
         private int count;
 
@@ -21,9 +26,6 @@ namespace HereticalSolutions.Collections.Managed
             this.contents = contents;
             
             count = 0;
-
-            //for (int i = 0; i < contents.Length; i++)
-            //    contents[i].Index = -1;
         }
 
         public int Count { get { return count; } }

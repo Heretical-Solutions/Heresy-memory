@@ -1,31 +1,166 @@
+using HereticalSolutions.Allocations;
+using HereticalSolutions.Allocations.Internal;
+
 using HereticalSolutions.Collections.Managed;
 using HereticalSolutions.Collections.Unmanaged;
-using System.Runtime.InteropServices;
+
 using System;
+using System.Collections.Generic;
+using System.Runtime.InteropServices;
 
 namespace HereticalSolutions.Collections.Factories
 {
 	public static class CollectionFactory
 	{
+		#region Stack pool
+
+		public static StackPool<T> BuildStackPool<T>(
+					AllocationCommand<T> initialAllocationCommand,
+					AllocationCommand<T> additionalAllocationCommand)
+		{
+			var stack = new Stack<T>();
+
+			int initialAmount = -1;
+
+			switch (initialAllocationCommand.Rule)
+			{
+				case EAllocationAmountRule.ZERO:
+					initialAmount = 0;
+					break;
+
+				case EAllocationAmountRule.ADD_ONE:
+					initialAmount = 1;
+					break;
+
+				case EAllocationAmountRule.ADD_PREDEFINED_AMOUNT:
+					initialAmount = initialAllocationCommand.Amount;
+					break;
+
+				default:
+					throw new Exception($"[CollectionFactory] INVALID INITIAL ALLOCATION COMMAND RULE: {initialAllocationCommand.Rule.ToString()}");
+			}
+
+			for (int i = 0; i < initialAmount; i++)
+				stack.Push(
+					initialAllocationCommand.AllocationDelegate());
+
+			return new StackPool<T>(
+				stack,
+				ResizeStackPool,
+				additionalAllocationCommand);
+		}
+
+		public static void ResizeStackPool<T>(
+			StackPool<T> pool)
+		{
+			var stack = ((IContentsRetrievable<Stack<T>>)pool).Contents;
+
+			var allocationCommand = pool.AllocationCommand;
+
+			int addedCapacity = -1;
+
+			switch (allocationCommand.Rule)
+			{
+				case EAllocationAmountRule.ADD_ONE:
+					addedCapacity = 1;
+					break;
+
+				case EAllocationAmountRule.ADD_PREDEFINED_AMOUNT:
+					addedCapacity = allocationCommand.Amount;
+					break;
+
+				default:
+					throw new Exception($"[CollectionFactory] INVALID RESIZE ALLOCATION COMMAND RULE FOR STACK: {allocationCommand.Rule.ToString()}");
+			}
+
+			for (int i = 0; i < addedCapacity; i++)
+				stack.Push(
+					allocationCommand.AllocationDelegate());
+		}
+
+		#endregion
+
+		#region Indexed packed array pool
+
+		public static IndexedPackedArrayPool<T> BuildIndexedPackedArrayPool<T>(
+			AllocationCommand<T> initialAllocationCommand,
+			AllocationCommand<T> additionalAllocationCommand)
+		{
+			var pool = BuildIndexedPackedArray<T>(initialAllocationCommand);
+
+			return new IndexedPackedArrayPool<T>(
+				pool,
+				ResizeIndexedPackedArrayPool,
+				additionalAllocationCommand);
+		}
+
+		public static void ResizeIndexedPackedArrayPool<T>(
+			IndexedPackedArrayPool<T> pool)
+		{
+			ResizeIndexedPackedArray(
+				((IContentsRetrievable<IndexedPackedArray<T>>)pool).Contents,
+				pool.AllocationCommand);
+		}
+
+		#endregion
+
 		#region Indexed packed array
 
 		public static IndexedPackedArray<T> BuildIndexedPackedArray<T>(
-			int capacity = 0)
+			AllocationCommand<T> initialAllocationCommand)
 		{
-			IndexedContainer<T>[] contents = new IndexedContainer<T>[capacity];
+			int initialAmount = -1;
 
-			for (int i = 0; i < capacity; i++)
-				contents[i] = new IndexedContainer<T>();
+			switch (initialAllocationCommand.Rule)
+			{
+				case EAllocationAmountRule.ZERO:
+					initialAmount = 0;
+					break;
+
+				case EAllocationAmountRule.ADD_ONE:
+					initialAmount = 1;
+					break;
+
+				case EAllocationAmountRule.ADD_PREDEFINED_AMOUNT:
+					initialAmount = initialAllocationCommand.Amount;
+					break;
+
+				default:
+					throw new Exception($"[CollectionFactory] INVALID INITIAL ALLOCATION COMMAND RULE: {initialAllocationCommand.Rule.ToString()}");
+			}
+
+			IndexedContainer<T>[] contents = new IndexedContainer<T>[initialAmount];
+
+			for (int i = 0; i < initialAmount; i++)
+				contents[i] = new IndexedContainer<T>(
+					initialAllocationCommand.AllocationDelegate());
 
 			return new IndexedPackedArray<T>(contents);
 		}
 
 		public static void ResizeIndexedPackedArray<T>(
 			IndexedPackedArray<T> array,
-			int newCapacity = -1)
+			AllocationCommand<T> allocationCommand)
 		{
-			if (newCapacity == -1)
-				newCapacity = array.Capacity * 2;
+			int newCapacity = -1;
+
+			switch (allocationCommand.Rule)
+			{
+				case EAllocationAmountRule.ADD_ONE:
+					newCapacity = array.Capacity + 1;
+					break;
+
+				case EAllocationAmountRule.DOUBLE_AMOUNT:
+					newCapacity = Math.Max(array.Capacity, 1) * 2;
+					break;
+
+				case EAllocationAmountRule.ADD_PREDEFINED_AMOUNT:
+					newCapacity = array.Capacity + allocationCommand.Amount;
+					break;
+
+				default:
+					throw new Exception($"[CollectionFactory] INVALID RESIZE ALLOCATION COMMAND RULE FOR INDEXED PACKED ARRAY: {allocationCommand.Rule.ToString()}");
+			}
 
 			IndexedContainer<T>[] newContents = new IndexedContainer<T>[newCapacity];
 
@@ -40,10 +175,11 @@ namespace HereticalSolutions.Collections.Factories
 					newContents[i] = array[i];
 
 				for (int i = array.Capacity; i < newCapacity; i++)
-					newContents[i] = new IndexedContainer<T>();
+					newContents[i] = new IndexedContainer<T>(
+						allocationCommand.AllocationDelegate());
 			}
 
-			array.UpdateContents(newContents);
+			((IContentsModifiable<IndexedContainer<T>[]>)array).UpdateContents(newContents);
 		}
 
 		#endregion
