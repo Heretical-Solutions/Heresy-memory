@@ -1,2 +1,2 @@
-# Heresy-memory
-nmanaged memory structures and memory management tools
+# Heresy Memory
+Collections, pools and allocation controllers
