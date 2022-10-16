@@ -49,31 +49,12 @@ namespace HereticalSolutions.Collections.Managed
 
 				result = pool.Pop();
 			}
-
-			OnBeforePop(result);
-
 			return result;
-		}
-
-		protected virtual void OnBeforePop(T instance)
-		{
 		}
 
 		public void Push(T instance)
 		{
-			OnBeforePush(instance);
-
 			pool.Push(instance);
-
-			OnAfterPush(instance);
-		}
-
-		protected virtual void OnBeforePush(T instance)
-		{
-		}
-
-		protected virtual void OnAfterPush(T instance)
-		{
 		}
 	}
 }

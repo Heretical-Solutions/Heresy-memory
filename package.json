@@ -1,6 +1,6 @@
 {
   "name": "com.hereticalsolutions.heresy-memory",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "displayName": "Heresy Memory",
   "description": "Collections, pools and allocation controllers\n\nThe implementation details are described in the following tutorial:\nhttps://www.jacksondunstan.com/articles/3770",
   "unity": "2020.3",
