@@ -17,12 +17,14 @@ namespace HereticalSolutions.Collections.Tests
 		{
 				//Allocation
 				IndexedPackedArray<int> packedArray = CollectionFactory.BuildIndexedPackedArray<int>(
-					new AllocationCommand<int>
-					{
-						Rule = EAllocationAmountRule.ADD_PREDEFINED_AMOUNT,
-						AllocationDelegate = () => { return -1; },
-						Amount = arraySize
-					});
+					CollectionFactory.BuildPoolElementAllocationCommand<int>(
+						new AllocationCommand<int>
+						{
+							Rule = EAllocationAmountRule.ADD_PREDEFINED_AMOUNT,
+							AllocationDelegate = () => { return -1; },
+							Amount = arraySize
+						},
+						CollectionFactory.BuildIndexedContainer));
 
 				//Operation
 
@@ -86,12 +88,14 @@ namespace HereticalSolutions.Collections.Tests
 		{
 				//Allocation
 				IndexedPackedArray<int> packedArray = CollectionFactory.BuildIndexedPackedArray<int>(
-					new AllocationCommand<int>
-					{
-						Rule = EAllocationAmountRule.ADD_PREDEFINED_AMOUNT,
-						AllocationDelegate = () => { return -1; },
-						Amount = arraySize
-					});
+					CollectionFactory.BuildPoolElementAllocationCommand<int>(
+						new AllocationCommand<int>
+						{
+							Rule = EAllocationAmountRule.ADD_PREDEFINED_AMOUNT,
+							AllocationDelegate = () => { return -1; },
+							Amount = arraySize
+						},
+						CollectionFactory.BuildIndexedContainer));
 
 				//Operation and comparison
 
@@ -165,12 +169,14 @@ namespace HereticalSolutions.Collections.Tests
 		{
 				//Allocation
 				IndexedPackedArray<int> packedArray = CollectionFactory.BuildIndexedPackedArray<int>(
-					new AllocationCommand<int>
-					{
-						Rule = EAllocationAmountRule.ADD_PREDEFINED_AMOUNT,
-						AllocationDelegate = () => { return -1; },
-						Amount = arraySize
-					});
+					CollectionFactory.BuildPoolElementAllocationCommand<int>(
+						new AllocationCommand<int>
+						{
+							Rule = EAllocationAmountRule.ADD_PREDEFINED_AMOUNT,
+							AllocationDelegate = () => { return -1; },
+							Amount = arraySize
+						},
+						CollectionFactory.BuildIndexedContainer));
 
 				//Operation and comparison
 
@@ -250,9 +256,9 @@ namespace HereticalSolutions.Collections.Tests
 			int arraySize,
 			int index,
 
-			IndexedContainer<int> instance1,
-			IndexedContainer<int> instance2,
-			IndexedContainer<int> instance3,
+			IPoolElement<int> instance1,
+			IPoolElement<int> instance2,
+			IPoolElement<int> instance3,
 
 			int expectedElement1,
 			int expectedElement2,

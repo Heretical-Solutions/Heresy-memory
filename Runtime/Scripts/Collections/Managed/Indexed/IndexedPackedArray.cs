@@ -12,16 +12,16 @@ namespace HereticalSolutions.Collections.Managed
     /// </summary>
     /// <typeparam name="T">Type of the objects stored in the container</typeparam>
     public class IndexedPackedArray<T>
-        : IContentsRetrievable<IndexedContainer<T>[]>,
-		  IContentsModifiable<IndexedContainer<T>[]>
+        : IContentsRetrievable<IPoolElement<T>[]>,
+		  IContentsModifiable<IPoolElement<T>[]>
     {
-        private IndexedContainer<T>[] contents;
+        private IPoolElement<T>[] contents;
 
-        public IndexedContainer<T>[] Contents { get { return contents; } }
+        public IPoolElement<T>[] Contents { get { return contents; } }
 
         private int count;
 
-        public IndexedPackedArray(IndexedContainer<T>[] contents)
+        public IndexedPackedArray(IPoolElement<T>[] contents)
         {
             this.contents = contents;
             
@@ -34,12 +34,12 @@ namespace HereticalSolutions.Collections.Managed
 
 		public bool HasFreeSpace { get { return count < contents.Length; } }
 
-        public void UpdateContents(IndexedContainer<T>[] newContents)
+        public void UpdateContents(IPoolElement<T>[] newContents)
         {
             contents = newContents;
         }
 
-		public IndexedContainer<T> this[int index]
+		public IPoolElement<T> this[int index]
 		{
 			get
 			{
@@ -56,7 +56,7 @@ namespace HereticalSolutions.Collections.Managed
 			}
 		}
 
-        public IndexedContainer<T> Get(int index)
+        public IPoolElement<T> Get(int index)
         {
 			if (index >= count || index < 0)
 				throw new Exception(
@@ -86,11 +86,11 @@ namespace HereticalSolutions.Collections.Managed
         }
         */
 
-        public IndexedContainer<T> Pop()
+        public IPoolElement<T> Pop()
         {
             var result = contents[count];
 
-            result.Index = count;
+            ((IIndexable)result).Index = count;
 
             count++;
 
@@ -104,9 +104,9 @@ namespace HereticalSolutions.Collections.Managed
         }
         */
 
-        public void Push(IndexedContainer<T> item)
+        public void Push(IPoolElement<T> item)
         {
-            Push(item.Index);
+            Push(((IIndexable)item).Index);
         }
 
         public void Push(int index)
@@ -124,9 +124,9 @@ namespace HereticalSolutions.Collections.Managed
 
             if (index != lastItemIndex)
             {
-                contents[lastItemIndex].Index = index;
+                ((IIndexable)contents[lastItemIndex]).Index = index;
 
-                contents[index].Index = -1;
+                ((IIndexable)contents[index]).Index = -1;
 
 
                 var swap = contents[index];
@@ -137,7 +137,7 @@ namespace HereticalSolutions.Collections.Managed
             }
             else
             {
-				contents[index].Index = -1;
+				((IIndexable)contents[index]).Index = -1;
             }
 
             count--;

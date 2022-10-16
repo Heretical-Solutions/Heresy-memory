@@ -6,7 +6,7 @@ namespace HereticalSolutions.Collections.Managed
 {
 	public class IndexedPackedArrayPool<T> 
 		: INonAllocPool<T>,
-		  IResizable<T>,
+		  IResizable<IPoolElement<T>>,
 		  IContentsRetrievable<IndexedPackedArray<T>>
 	{
 		protected IndexedPackedArray<T> pool;
@@ -20,12 +20,12 @@ namespace HereticalSolutions.Collections.Managed
 
 		protected Action<IndexedPackedArrayPool<T>> resizeDelegate;
 
-		public AllocationCommand<T> AllocationCommand { get; private set; }
+		public AllocationCommand<IPoolElement<T>> AllocationCommand { get; private set; }
 
 		public IndexedPackedArrayPool(
 			IndexedPackedArray<T> pool,
 			Action<IndexedPackedArrayPool<T>> resizeDelegate,
-			AllocationCommand<T> allocationCommand)
+			AllocationCommand<IPoolElement<T>> allocationCommand)
 		{
 			this.pool = pool;
 
@@ -41,30 +41,12 @@ namespace HereticalSolutions.Collections.Managed
 
 			IPoolElement<T> result = pool.Pop();
 
-			OnBeforePop(result.Value);
-
 			return result;
-		}
-
-		protected virtual void OnBeforePop(T instance)
-		{
 		}
 
 		public void Push(IPoolElement<T> instance)
 		{
-			OnBeforePush(instance.Value);
-
-			pool.Push((IndexedContainer<T>)instance);
-
-			OnAfterPush(instance.Value);
-		}
-
-		protected virtual void OnBeforePush(T instance)
-		{
-		}
-
-		protected virtual void OnAfterPush(T instance)
-		{
+			pool.Push(instance);
 		}
 	}
 }
