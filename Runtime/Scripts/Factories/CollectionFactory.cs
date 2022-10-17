@@ -22,7 +22,7 @@ namespace HereticalSolutions.Collections.Factories
 
 			int initialAmount = -1;
 
-			switch (initialAllocationCommand.Rule)
+			switch (initialAllocationCommand.Descriptor.Rule)
 			{
 				case EAllocationAmountRule.ZERO:
 					initialAmount = 0;
@@ -33,11 +33,11 @@ namespace HereticalSolutions.Collections.Factories
 					break;
 
 				case EAllocationAmountRule.ADD_PREDEFINED_AMOUNT:
-					initialAmount = initialAllocationCommand.Amount;
+					initialAmount = initialAllocationCommand.Descriptor.Amount;
 					break;
 
 				default:
-					throw new Exception($"[CollectionFactory] INVALID INITIAL ALLOCATION COMMAND RULE: {initialAllocationCommand.Rule.ToString()}");
+					throw new Exception($"[CollectionFactory] INVALID INITIAL ALLOCATION COMMAND RULE: {initialAllocationCommand.Descriptor.Rule.ToString()}");
 			}
 
 			for (int i = 0; i < initialAmount; i++)
@@ -59,18 +59,18 @@ namespace HereticalSolutions.Collections.Factories
 
 			int addedCapacity = -1;
 
-			switch (allocationCommand.Rule)
+			switch (allocationCommand.Descriptor.Rule)
 			{
 				case EAllocationAmountRule.ADD_ONE:
 					addedCapacity = 1;
 					break;
 
 				case EAllocationAmountRule.ADD_PREDEFINED_AMOUNT:
-					addedCapacity = allocationCommand.Amount;
+					addedCapacity = allocationCommand.Descriptor.Amount;
 					break;
 
 				default:
-					throw new Exception($"[CollectionFactory] INVALID RESIZE ALLOCATION COMMAND RULE FOR STACK: {allocationCommand.Rule.ToString()}");
+					throw new Exception($"[CollectionFactory] INVALID RESIZE ALLOCATION COMMAND RULE FOR STACK: {allocationCommand.Descriptor.Rule.ToString()}");
 			}
 
 			for (int i = 0; i < addedCapacity; i++)
@@ -111,7 +111,7 @@ namespace HereticalSolutions.Collections.Factories
 		{
 			int initialAmount = -1;
 
-			switch (initialAllocationCommand.Rule)
+			switch (initialAllocationCommand.Descriptor.Rule)
 			{
 				case EAllocationAmountRule.ZERO:
 					initialAmount = 0;
@@ -122,11 +122,11 @@ namespace HereticalSolutions.Collections.Factories
 					break;
 
 				case EAllocationAmountRule.ADD_PREDEFINED_AMOUNT:
-					initialAmount = initialAllocationCommand.Amount;
+					initialAmount = initialAllocationCommand.Descriptor.Amount;
 					break;
 
 				default:
-					throw new Exception($"[CollectionFactory] INVALID INITIAL ALLOCATION COMMAND RULE: {initialAllocationCommand.Rule.ToString()}");
+					throw new Exception($"[CollectionFactory] INVALID INITIAL ALLOCATION COMMAND RULE: {initialAllocationCommand.Descriptor.Rule.ToString()}");
 			}
 
 			IPoolElement<T>[] contents = new IPoolElement<T>[initialAmount];
@@ -143,7 +143,7 @@ namespace HereticalSolutions.Collections.Factories
 		{
 			int newCapacity = -1;
 
-			switch (allocationCommand.Rule)
+			switch (allocationCommand.Descriptor.Rule)
 			{
 				case EAllocationAmountRule.ADD_ONE:
 					newCapacity = array.Capacity + 1;
@@ -154,11 +154,11 @@ namespace HereticalSolutions.Collections.Factories
 					break;
 
 				case EAllocationAmountRule.ADD_PREDEFINED_AMOUNT:
-					newCapacity = array.Capacity + allocationCommand.Amount;
+					newCapacity = array.Capacity + allocationCommand.Descriptor.Amount;
 					break;
 
 				default:
-					throw new Exception($"[CollectionFactory] INVALID RESIZE ALLOCATION COMMAND RULE FOR INDEXED PACKED ARRAY: {allocationCommand.Rule.ToString()}");
+					throw new Exception($"[CollectionFactory] INVALID RESIZE ALLOCATION COMMAND RULE FOR INDEXED PACKED ARRAY: {allocationCommand.Descriptor.Rule.ToString()}");
 			}
 
 			IPoolElement<T>[] newContents = new IPoolElement<T>[newCapacity];
@@ -185,25 +185,23 @@ namespace HereticalSolutions.Collections.Factories
 		#region Pool element allocation command
 
 		public static AllocationCommand<IPoolElement<T>> BuildPoolElementAllocationCommand<T>(
-			AllocationCommand<T> valueAllocationCommand,
+			//AllocationCommand<T> valueAllocationCommand,
+			AllocationCommandDescriptor descriptor,
+			Func<T> valueAllocationDelegate,
 			Func<Func<T>, IPoolElement<T>> containerAllocationDelegate)
 		{
 			Func<IPoolElement<T>> poolElementAllocationDelegate = () =>
 				containerAllocationDelegate(
-					valueAllocationCommand.AllocationDelegate);
-
-			//BuildIndexedContainer<T>(initialAllocationCommand.AllocationDelegate);
+					valueAllocationDelegate); //valueAllocationCommand.AllocationDelegate);
 
 			var poolElementAllocationCommand = new AllocationCommand<IPoolElement<T>>
 			{
-				Rule = valueAllocationCommand.Rule,
-				Amount = valueAllocationCommand.Amount,
+				Descriptor = descriptor, //valueAllocationCommand.Descriptor,
+
 				AllocationDelegate = poolElementAllocationDelegate
 			};
 
 			return poolElementAllocationCommand;
-
-			//BuildIndexedPackedArray<T>(containerAllocationCommand);
 		}
 
 		#endregion

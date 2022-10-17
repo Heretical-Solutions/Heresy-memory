@@ -18,12 +18,20 @@ namespace HereticalSolutions.Collections.Tests
 				//Allocation
 				IndexedPackedArray<int> packedArray = CollectionFactory.BuildIndexedPackedArray<int>(
 					CollectionFactory.BuildPoolElementAllocationCommand<int>(
+						/*
 						new AllocationCommand<int>
 						{
 							Rule = EAllocationAmountRule.ADD_PREDEFINED_AMOUNT,
 							AllocationDelegate = () => { return -1; },
 							Amount = arraySize
 						},
+						*/
+						new AllocationCommandDescriptor
+						{
+							Rule = EAllocationAmountRule.ADD_PREDEFINED_AMOUNT,
+							Amount = arraySize
+						},
+						() => { return -1; },
 						CollectionFactory.BuildIndexedContainer));
 
 				//Operation
@@ -89,12 +97,20 @@ namespace HereticalSolutions.Collections.Tests
 				//Allocation
 				IndexedPackedArray<int> packedArray = CollectionFactory.BuildIndexedPackedArray<int>(
 					CollectionFactory.BuildPoolElementAllocationCommand<int>(
+						/*
 						new AllocationCommand<int>
 						{
 							Rule = EAllocationAmountRule.ADD_PREDEFINED_AMOUNT,
 							AllocationDelegate = () => { return -1; },
 							Amount = arraySize
 						},
+						*/
+						new AllocationCommandDescriptor
+						{
+							Rule = EAllocationAmountRule.ADD_PREDEFINED_AMOUNT,
+							Amount = arraySize
+						},
+						() => { return -1; },
 						CollectionFactory.BuildIndexedContainer));
 
 				//Operation and comparison
@@ -170,12 +186,20 @@ namespace HereticalSolutions.Collections.Tests
 				//Allocation
 				IndexedPackedArray<int> packedArray = CollectionFactory.BuildIndexedPackedArray<int>(
 					CollectionFactory.BuildPoolElementAllocationCommand<int>(
+						/*
 						new AllocationCommand<int>
 						{
 							Rule = EAllocationAmountRule.ADD_PREDEFINED_AMOUNT,
 							AllocationDelegate = () => { return -1; },
 							Amount = arraySize
 						},
+						*/
+						new AllocationCommandDescriptor
+						{
+							Rule = EAllocationAmountRule.ADD_PREDEFINED_AMOUNT,
+							Amount = arraySize
+						},
+						() => { return -1; },
 						CollectionFactory.BuildIndexedContainer));
 
 				//Operation and comparison

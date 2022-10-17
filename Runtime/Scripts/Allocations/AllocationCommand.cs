@@ -4,10 +4,8 @@ namespace HereticalSolutions.Allocations
 {
 	public class AllocationCommand<T>
 	{
-		public EAllocationAmountRule Rule;
+		public AllocationCommandDescriptor Descriptor;
 
 		public Func<T> AllocationDelegate;
-
-		public int Amount;
 	}
 }
