@@ -80,6 +80,31 @@ namespace HereticalSolutions.Collections.Factories
 
 		#endregion
 
+		#region Non alloc pool
+
+		public static INonAllocPool<T> BuildNonAllocPool<T>(
+			Func<T> valueAllocationDelegate,
+			Func<Func<T>, IPoolElement<T>> containerAllocationDelegate,
+			AllocationCommandDescriptor initialAllocation,
+			AllocationCommandDescriptor additionalAllocation)
+		{
+			INonAllocPool<T> packedArrayPool = BuildIndexedPackedArrayPool<T>(
+
+				BuildPoolElementAllocationCommand<T>(
+					initialAllocation,
+					valueAllocationDelegate,
+					containerAllocationDelegate),
+
+				BuildPoolElementAllocationCommand<T>(
+					additionalAllocation,
+					valueAllocationDelegate,
+					containerAllocationDelegate));
+
+			return packedArrayPool;
+		}
+
+		#endregion
+
 		#region Indexed packed array pool
 
 		public static IndexedPackedArrayPool<T> BuildIndexedPackedArrayPool<T>(
