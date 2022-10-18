@@ -9,13 +9,13 @@ namespace HereticalSolutions.Collections.Managed
 		  IResizable<IPoolElement<T>>,
 		  IContentsRetrievable<IndexedPackedArray<T>>
 	{
-		protected IndexedPackedArray<T> pool;
+		protected IndexedPackedArray<T> packedArray;
 
-		public IndexedPackedArray<T> Contents { get => pool; }
+		public IndexedPackedArray<T> Contents { get => packedArray; }
 
 		public void UpdateContents(IndexedPackedArray<T> newContents)
 		{
-			pool = newContents;
+			packedArray = newContents;
 		}
 
 		protected Action<IndexedPackedArrayPool<T>> resizeDelegate;
@@ -23,11 +23,11 @@ namespace HereticalSolutions.Collections.Managed
 		public AllocationCommand<IPoolElement<T>> AllocationCommand { get; private set; }
 
 		public IndexedPackedArrayPool(
-			IndexedPackedArray<T> pool,
+			IndexedPackedArray<T> packedArray,
 			Action<IndexedPackedArrayPool<T>> resizeDelegate,
 			AllocationCommand<IPoolElement<T>> allocationCommand)
 		{
-			this.pool = pool;
+			this.packedArray = packedArray;
 
 			this.resizeDelegate = resizeDelegate;
 
@@ -36,17 +36,17 @@ namespace HereticalSolutions.Collections.Managed
 
 		public IPoolElement<T> Pop()
 		{
-			if (!pool.HasFreeSpace)
+			if (!packedArray.HasFreeSpace)
 				resizeDelegate(this);
 
-			IPoolElement<T> result = pool.Pop();
+			IPoolElement<T> result = packedArray.Pop();
 
 			return result;
 		}
 
 		public void Push(IPoolElement<T> instance)
 		{
-			pool.Push(instance);
+			packedArray.Push(instance);
 		}
 	}
 }

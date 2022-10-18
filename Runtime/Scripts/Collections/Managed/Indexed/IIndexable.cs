@@ -1,7 +1,9 @@
 namespace HereticalSolutions.Collections.Managed
 {
-	public interface IIndexable
+	public interface IIndexable<T>
 	{
-		int Index { get; set; }
+		int Count { get; }
+
+		T this[int index] { get; }
 	}
 }

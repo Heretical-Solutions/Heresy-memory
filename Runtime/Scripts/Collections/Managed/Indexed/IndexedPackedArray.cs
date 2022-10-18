@@ -12,7 +12,8 @@ namespace HereticalSolutions.Collections.Managed
     /// </summary>
     /// <typeparam name="T">Type of the objects stored in the container</typeparam>
     public class IndexedPackedArray<T>
-        : IContentsRetrievable<IPoolElement<T>[]>,
+        : IIndexable<IPoolElement<T>>,
+          IContentsRetrievable<IPoolElement<T>[]>,
 		  IContentsModifiable<IPoolElement<T>[]>
     {
         private IPoolElement<T>[] contents;
@@ -90,7 +91,7 @@ namespace HereticalSolutions.Collections.Managed
         {
             var result = contents[count];
 
-            ((IIndexable)result).Index = count;
+            ((IIndexed)result).Index = count;
 
             count++;
 
@@ -106,7 +107,7 @@ namespace HereticalSolutions.Collections.Managed
 
         public void Push(IPoolElement<T> item)
         {
-            Push(((IIndexable)item).Index);
+            Push(((IIndexed)item).Index);
         }
 
         public void Push(int index)
@@ -124,9 +125,9 @@ namespace HereticalSolutions.Collections.Managed
 
             if (index != lastItemIndex)
             {
-                ((IIndexable)contents[lastItemIndex]).Index = index;
+                ((IIndexed)contents[lastItemIndex]).Index = index;
 
-                ((IIndexable)contents[index]).Index = -1;
+                ((IIndexed)contents[index]).Index = -1;
 
 
                 var swap = contents[index];
@@ -137,7 +138,7 @@ namespace HereticalSolutions.Collections.Managed
             }
             else
             {
-				((IIndexable)contents[index]).Index = -1;
+				((IIndexed)contents[index]).Index = -1;
             }
 
             count--;

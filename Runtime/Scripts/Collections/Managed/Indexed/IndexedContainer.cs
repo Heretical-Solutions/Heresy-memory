@@ -2,7 +2,7 @@ namespace HereticalSolutions.Collections.Managed
 {
 	public class IndexedContainer<T> 
 		: IPoolElement<T>,
-		IIndexable
+		  IIndexed
 	{
 		public int Index { get; set; }
 
