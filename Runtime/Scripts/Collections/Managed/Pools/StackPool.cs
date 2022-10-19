@@ -12,16 +12,29 @@ namespace HereticalSolutions.Collections.Managed
 	{
 		protected Stack<T> pool;
 
+		#region IContentsRetrievable
+
 		public Stack<T> Contents { get => pool; }
+
+		#endregion
 
 		public void UpdateContents(Stack<T> newContents)
 		{
 			pool = newContents;
 		}
 
+		#region IResizable
+
+		public AllocationCommand<T> ResizeAllocationCommand { get; private set; }
+
 		protected Action<StackPool<T>> resizeDelegate;
 
-		public AllocationCommand<T> AllocationCommand { get; private set; }
+		public void Resize()
+		{
+			resizeDelegate(this);
+		}
+
+		#endregion
 
 		public StackPool(
 			Stack<T> pool,
@@ -32,8 +45,10 @@ namespace HereticalSolutions.Collections.Managed
 
 			this.resizeDelegate = resizeDelegate;
 
-			AllocationCommand = allocationCommand;
+			ResizeAllocationCommand = allocationCommand;
 		}
+
+		#region IPool
 
 		public T Pop()
 		{
@@ -56,5 +71,7 @@ namespace HereticalSolutions.Collections.Managed
 		{
 			pool.Push(instance);
 		}
+
+		#endregion
 	}
 }
