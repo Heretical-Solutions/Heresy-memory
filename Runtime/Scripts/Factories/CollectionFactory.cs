@@ -85,7 +85,8 @@ namespace HereticalSolutions.Collections.Factories
 					Func<T> valueAllocationDelegate,
 					Func<Func<T>, IPoolElement<T>> containerAllocationDelegate,
 					AllocationCommandDescriptor initialAllocation,
-					AllocationCommandDescriptor additionalAllocation)
+					AllocationCommandDescriptor additionalAllocation,
+					Action<IPoolElement<T>> notifyAllocationDelegate = null)
 		{
 			INonAllocPool<T> packedArrayPool = BuildPackedArrayPool<T>(
 
@@ -97,7 +98,9 @@ namespace HereticalSolutions.Collections.Factories
 				BuildPoolElementAllocationCommand<T>(
 					additionalAllocation,
 					valueAllocationDelegate,
-					containerAllocationDelegate));
+					containerAllocationDelegate),
+					
+				notifyAllocationDelegate);
 
 			return packedArrayPool;
 		}
@@ -106,7 +109,8 @@ namespace HereticalSolutions.Collections.Factories
 			Func<T> valueAllocationDelegate,
 			Func<Func<T>, IPoolElement<T>> containerAllocationDelegate,
 			AllocationCommandDescriptor initialAllocation,
-			AllocationCommandDescriptor additionalAllocation)
+			AllocationCommandDescriptor additionalAllocation,
+			Action<IPoolElement<T>> notifyAllocationDelegate = null)
 		{
 			INonAllocPool<T> supplyAndMergePool = BuildSupplyAndMergePool<T>(
 
@@ -120,7 +124,9 @@ namespace HereticalSolutions.Collections.Factories
 					null,
 					containerAllocationDelegate),
 
-				valueAllocationDelegate);
+				valueAllocationDelegate,
+				
+				notifyAllocationDelegate);
 
 			return supplyAndMergePool;
 		}
@@ -132,7 +138,8 @@ namespace HereticalSolutions.Collections.Factories
 		public static SupplyAndMergePool<T> BuildSupplyAndMergePool<T>(
 			AllocationCommand<IPoolElement<T>> initialAllocationCommand,
 			AllocationCommand<IPoolElement<T>> appendAllocationCommand,
-			Func<T> topUpAllocationDelegate)
+			Func<T> topUpAllocationDelegate,
+			Action<IPoolElement<T>> notifyAllocationDelegate = null)
 		{
 			var basePool = BuildIndexedPackedArray<T>(initialAllocationCommand);
 
@@ -143,7 +150,8 @@ namespace HereticalSolutions.Collections.Factories
 				supplyPool,
 				appendAllocationCommand,
 				MergeIndexedPackedArrays,
-				topUpAllocationDelegate);
+				topUpAllocationDelegate,
+				notifyAllocationDelegate);
 		}
 
 		#endregion
@@ -152,14 +160,16 @@ namespace HereticalSolutions.Collections.Factories
 
 		public static PackedArrayPool<T> BuildPackedArrayPool<T>(
 			AllocationCommand<IPoolElement<T>> initialAllocationCommand,
-			AllocationCommand<IPoolElement<T>> resizeAllocationCommand)
+			AllocationCommand<IPoolElement<T>> resizeAllocationCommand,
+			Action<IPoolElement<T>> notifyAllocationDelegate = null)
 		{
 			var pool = BuildIndexedPackedArray<T>(initialAllocationCommand);
 
 			return new PackedArrayPool<T>(
 				pool,
 				ResizePackedArrayPool,
-				resizeAllocationCommand);
+				resizeAllocationCommand,
+				notifyAllocationDelegate);
 		}
 
 		public static void ResizePackedArrayPool<T>(
