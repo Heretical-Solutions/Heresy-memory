@@ -52,21 +52,16 @@ namespace HereticalSolutions.Collections.Managed
 		public void TopUp(IPoolElement<T> element)
 		{
 			element.Value = topUpAllocationDelegate.Invoke();
-
-			allocationNotifiable?.Notify(element);
 		}
 
 		#endregion
-
-		protected IAllocationNotifiable<T> allocationNotifiable;
 
 		public SupplyAndMergePool(
 			IndexedPackedArray<T> baseArray,
 			IndexedPackedArray<T> supplyArray,
 			AllocationCommand<IPoolElement<T>> appendAllocationCommand,
 			Action<IndexedPackedArray<T>, IndexedPackedArray<T>, AllocationCommand<IPoolElement<T>>> mergeDelegate,
-			Func<T> topUpAllocationDelegate,
-			IAllocationNotifiable<T> allocationNotifiable = null)
+			Func<T> topUpAllocationDelegate)
 		{
 			this.baseArray = baseArray;
 
@@ -76,12 +71,7 @@ namespace HereticalSolutions.Collections.Managed
 
 			this.topUpAllocationDelegate = topUpAllocationDelegate;
 
-			this.allocationNotifiable = allocationNotifiable;
-
 			AppendAllocationCommand = appendAllocationCommand;
-
-			for (int i = 0; i < baseArray.Capacity; i++)
-				allocationNotifiable?.Notify(baseArray.ElementAt(i));
 		}
 
 		#region INonAllocPool
