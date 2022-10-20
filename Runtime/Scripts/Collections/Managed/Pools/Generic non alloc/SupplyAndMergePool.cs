@@ -53,12 +53,12 @@ namespace HereticalSolutions.Collections.Managed
 		{
 			element.Value = topUpAllocationDelegate.Invoke();
 
-			notifyAllocationDelegate?.Invoke(element);
+			allocationNotifiable?.Notify(element);
 		}
 
 		#endregion
 
-		protected Action<IPoolElement<T>> notifyAllocationDelegate;
+		protected IAllocationNotifiable<T> allocationNotifiable;
 
 		public SupplyAndMergePool(
 			IndexedPackedArray<T> baseArray,
@@ -66,20 +66,22 @@ namespace HereticalSolutions.Collections.Managed
 			AllocationCommand<IPoolElement<T>> appendAllocationCommand,
 			Action<IndexedPackedArray<T>, IndexedPackedArray<T>, AllocationCommand<IPoolElement<T>>> mergeDelegate,
 			Func<T> topUpAllocationDelegate,
-			Action<IPoolElement<T>> notifyAllocationDelegate = null)
+			IAllocationNotifiable<T> allocationNotifiable = null)
 		{
 			this.baseArray = baseArray;
 
 			this.supplyArray = supplyArray;
 
-			AppendAllocationCommand = appendAllocationCommand;
-
 			this.mergeDelegate = mergeDelegate;
 
 			this.topUpAllocationDelegate = topUpAllocationDelegate;
 
+			this.allocationNotifiable = allocationNotifiable;
+
+			AppendAllocationCommand = appendAllocationCommand;
+
 			for (int i = 0; i < baseArray.Capacity; i++)
-				notifyAllocationDelegate?.Invoke(baseArray.ElementAt(i));
+				allocationNotifiable?.Notify(baseArray.ElementAt(i));
 		}
 
 		#region INonAllocPool

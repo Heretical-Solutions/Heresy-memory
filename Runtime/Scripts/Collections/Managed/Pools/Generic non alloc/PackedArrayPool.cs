@@ -29,24 +29,24 @@ namespace HereticalSolutions.Collections.Managed
 
 		#endregion
 
-		protected Action<IPoolElement<T>> notifyAllocationDelegate;
+		protected IAllocationNotifiable<T> allocationNotifiable;
 
 		public PackedArrayPool(
 			IndexedPackedArray<T> packedArray,
 			Action<PackedArrayPool<T>> resizeDelegate,
 			AllocationCommand<IPoolElement<T>> resizeAllocationCommand,
-			Action<IPoolElement<T>> notifyAllocationDelegate = null)
+			IAllocationNotifiable<T> allocationNotifiable = null)
 		{
 			this.packedArray = packedArray;
 
 			this.resizeDelegate = resizeDelegate;
 
-			this.notifyAllocationDelegate = notifyAllocationDelegate;
+			this.allocationNotifiable = allocationNotifiable;
 
 			ResizeAllocationCommand = resizeAllocationCommand;
 
 			for (int i = 0; i < packedArray.Capacity; i++)
-				notifyAllocationDelegate?.Invoke(packedArray.ElementAt(i));
+				allocationNotifiable?.Notify(packedArray.ElementAt(i));
 		}
 
 		#region INonAllocPool
@@ -62,7 +62,7 @@ namespace HereticalSolutions.Collections.Managed
 				int newCapacity = packedArray.Capacity;
 
 				for (int i = previousCapacity; i < newCapacity; i++)
-					notifyAllocationDelegate?.Invoke(packedArray.ElementAt(i));
+					allocationNotifiable?.Notify(packedArray.ElementAt(i));
 			}
 
 			IPoolElement<T> result = packedArray.Pop();
