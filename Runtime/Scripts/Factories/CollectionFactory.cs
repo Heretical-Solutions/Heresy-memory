@@ -229,17 +229,19 @@ namespace HereticalSolutions.Collections.Factories
 					throw new Exception($"[CollectionFactory] INVALID ALLOCATION COMMAND RULE FOR INDEXED PACKED ARRAY: {allocationCommand.Descriptor.Rule.ToString()}");
 			}
 
+			IPoolElement<T>[] oldContents = ((IContentsRetrievable<IPoolElement<T>[]>)array).Contents;
+
 			IPoolElement<T>[] newContents = new IPoolElement<T>[newCapacity];
 
 			if (newCapacity <= array.Capacity)
 			{
 				for (int i = 0; i < newCapacity; i++)
-					newContents[i] = array[i];
+					newContents[i] = oldContents[i];
 			}
 			else
 			{
 				for (int i = 0; i < array.Capacity; i++)
-					newContents[i] = array[i];
+					newContents[i] = oldContents[i];
 
 				for (int i = array.Capacity; i < newCapacity; i++)
 					newContents[i] = allocationCommand.AllocationDelegate();
@@ -253,6 +255,10 @@ namespace HereticalSolutions.Collections.Factories
 			IndexedPackedArray<T> donorArray,
 			AllocationCommand<IPoolElement<T>> donorAllocationCommand)
 		{
+			IPoolElement<T>[] oldReceiverContents = ((IContentsRetrievable<IPoolElement<T>[]>)receiverArray).Contents;
+
+			IPoolElement<T>[] oldDonorContents = ((IContentsRetrievable<IPoolElement<T>[]>)donorArray).Contents;
+
 			#region Update receiver contents
 
 			int newReceiverCapacity = receiverArray.Capacity + donorArray.Capacity;
@@ -260,13 +266,13 @@ namespace HereticalSolutions.Collections.Factories
 			IPoolElement<T>[] newReceiverContents = new IPoolElement<T>[newReceiverCapacity];
 
 			for (int i = 0; i < receiverArray.Capacity; i++)
-				newReceiverContents[i] = receiverArray[i];
+				newReceiverContents[i] = oldReceiverContents[i];
 
 			for(int i = 0; i < donorArray.Capacity; i++)
 			{
 				int newIndex = i + receiverArray.Capacity;
 
-				newReceiverContents[newIndex] = donorArray[i];
+				newReceiverContents[newIndex] = oldDonorContents[i];
 			}
 
 			if (receiverArray.Capacity == receiverArray.Count)
