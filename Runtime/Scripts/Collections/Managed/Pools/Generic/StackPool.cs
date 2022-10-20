@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using HereticalSolutions.Allocations;
-using HereticalSolutions.Allocations.Internal;
+using HereticalSolutions.Allocations;
 
 namespace HereticalSolutions.Collections.Managed
 {

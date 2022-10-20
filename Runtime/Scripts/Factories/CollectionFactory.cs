@@ -1,5 +1,4 @@
 using HereticalSolutions.Allocations;
-using HereticalSolutions.Allocations.Internal;
 
 using HereticalSolutions.Collections.Managed;
 using HereticalSolutions.Collections.Unmanaged;
@@ -55,7 +54,7 @@ namespace HereticalSolutions.Collections.Factories
 		{
 			var stack = ((IContentsRetrievable<Stack<T>>)pool).Contents;
 
-			var allocationCommand = pool.ResizeAllocationCommand;
+			var allocationCommand = ((IResizable<T>)pool).ResizeAllocationCommand;
 
 			int addedCapacity = -1;
 
@@ -80,15 +79,15 @@ namespace HereticalSolutions.Collections.Factories
 
 		#endregion
 
-		#region Non alloc pool
+		#region Non alloc pools
 
-		public static INonAllocPool<T> BuildNonAllocPool<T>(
-			Func<T> valueAllocationDelegate,
-			Func<Func<T>, IPoolElement<T>> containerAllocationDelegate,
-			AllocationCommandDescriptor initialAllocation,
-			AllocationCommandDescriptor additionalAllocation)
+		public static INonAllocPool<T> BuildPackedArrayPool<T>(
+					Func<T> valueAllocationDelegate,
+					Func<Func<T>, IPoolElement<T>> containerAllocationDelegate,
+					AllocationCommandDescriptor initialAllocation,
+					AllocationCommandDescriptor additionalAllocation)
 		{
-			INonAllocPool<T> packedArrayPool = BuildIndexedPackedArrayPool<T>(
+			INonAllocPool<T> packedArrayPool = BuildPackedArrayPool<T>(
 
 				BuildPoolElementAllocationCommand<T>(
 					initialAllocation,
@@ -97,6 +96,22 @@ namespace HereticalSolutions.Collections.Factories
 
 				BuildPoolElementAllocationCommand<T>(
 					additionalAllocation,
+					valueAllocationDelegate,
+					containerAllocationDelegate));
+
+			return packedArrayPool;
+		}
+
+		public static INonAllocPool<T> BuildSupplyAndMergePool<T>(
+			Func<T> valueAllocationDelegate,
+			Func<Func<T>, IPoolElement<T>> containerAllocationDelegate,
+			AllocationCommandDescriptor initialAllocation,
+			AllocationCommandDescriptor additionalAllocation)
+		{
+			INonAllocPool<T> supplyAndMergePool = BuildSupplyAndMergePool<T>(
+
+				BuildPoolElementAllocationCommand<T>(
+					initialAllocation,
 					valueAllocationDelegate,
 					containerAllocationDelegate),
 
@@ -107,47 +122,52 @@ namespace HereticalSolutions.Collections.Factories
 
 				valueAllocationDelegate);
 
-			return packedArrayPool;
+			return supplyAndMergePool;
 		}
 
 		#endregion
 
-		#region Indexed packed array pool
+		#region Supply and merge pool
 
-		public static IndexedPackedArrayPool<T> BuildIndexedPackedArrayPool<T>(
+		public static SupplyAndMergePool<T> BuildSupplyAndMergePool<T>(
 			AllocationCommand<IPoolElement<T>> initialAllocationCommand,
-			AllocationCommand<IPoolElement<T>> resizeAllocationCommand,
 			AllocationCommand<IPoolElement<T>> appendAllocationCommand,
 			Func<T> topUpAllocationDelegate)
 		{
-			var pool = BuildIndexedPackedArray<T>(initialAllocationCommand);
+			var basePool = BuildIndexedPackedArray<T>(initialAllocationCommand);
 
-			return new IndexedPackedArrayPool<T>(
-				pool,
+			var supplyPool = BuildIndexedPackedArray<T>(appendAllocationCommand);
 
-				ResizeIndexedPackedArrayPool,
-				resizeAllocationCommand,
-
-				AppendIndexedPackedArrayPool,
+			return new SupplyAndMergePool<T>(
+				basePool,
+				supplyPool,
 				appendAllocationCommand,
-
+				MergeIndexedPackedArrays,
 				topUpAllocationDelegate);
 		}
 
-		public static void ResizeIndexedPackedArrayPool<T>(
-			IndexedPackedArrayPool<T> pool)
+		#endregion
+
+		#region Packed array pool
+
+		public static PackedArrayPool<T> BuildPackedArrayPool<T>(
+			AllocationCommand<IPoolElement<T>> initialAllocationCommand,
+			AllocationCommand<IPoolElement<T>> resizeAllocationCommand)
+		{
+			var pool = BuildIndexedPackedArray<T>(initialAllocationCommand);
+
+			return new PackedArrayPool<T>(
+				pool,
+				ResizePackedArrayPool,
+				resizeAllocationCommand);
+		}
+
+		public static void ResizePackedArrayPool<T>(
+			PackedArrayPool<T> pool)
 		{
 			ResizeIndexedPackedArray(
 				((IContentsRetrievable<IndexedPackedArray<T>>)pool).Contents,
 				pool.ResizeAllocationCommand);
-		}
-
-		public static IPoolElement<T> AppendIndexedPackedArrayPool<T>(
-			IndexedPackedArrayPool<T> pool)
-		{
-			return AppendIndexedPackedArray(
-				((IContentsRetrievable<IndexedPackedArray<T>>)pool).Contents,
-				pool.AppendAllocationCommand);
 		}
 
 		#endregion
@@ -155,11 +175,11 @@ namespace HereticalSolutions.Collections.Factories
 		#region Indexed packed array
 
 		public static IndexedPackedArray<T> BuildIndexedPackedArray<T>(
-			AllocationCommand<IPoolElement<T>> initialAllocationCommand)
+			AllocationCommand<IPoolElement<T>> allocationCommand)
 		{
 			int initialAmount = -1;
 
-			switch (initialAllocationCommand.Descriptor.Rule)
+			switch (allocationCommand.Descriptor.Rule)
 			{
 				case EAllocationAmountRule.ZERO:
 					initialAmount = 0;
@@ -170,17 +190,17 @@ namespace HereticalSolutions.Collections.Factories
 					break;
 
 				case EAllocationAmountRule.ADD_PREDEFINED_AMOUNT:
-					initialAmount = initialAllocationCommand.Descriptor.Amount;
+					initialAmount = allocationCommand.Descriptor.Amount;
 					break;
 
 				default:
-					throw new Exception($"[CollectionFactory] INVALID INITIAL ALLOCATION COMMAND RULE: {initialAllocationCommand.Descriptor.Rule.ToString()}");
+					throw new Exception($"[CollectionFactory] INVALID ALLOCATION COMMAND RULE: {allocationCommand.Descriptor.Rule.ToString()}");
 			}
 
 			IPoolElement<T>[] contents = new IPoolElement<T>[initialAmount];
 
 			for (int i = 0; i < initialAmount; i++)
-				contents[i] = initialAllocationCommand.AllocationDelegate();
+				contents[i] = allocationCommand.AllocationDelegate();
 
 			return new IndexedPackedArray<T>(contents);
 		}
@@ -206,7 +226,7 @@ namespace HereticalSolutions.Collections.Factories
 					break;
 
 				default:
-					throw new Exception($"[CollectionFactory] INVALID RESIZE ALLOCATION COMMAND RULE FOR INDEXED PACKED ARRAY: {allocationCommand.Descriptor.Rule.ToString()}");
+					throw new Exception($"[CollectionFactory] INVALID ALLOCATION COMMAND RULE FOR INDEXED PACKED ARRAY: {allocationCommand.Descriptor.Rule.ToString()}");
 			}
 
 			IPoolElement<T>[] newContents = new IPoolElement<T>[newCapacity];
@@ -228,51 +248,109 @@ namespace HereticalSolutions.Collections.Factories
 			((IContentsModifiable<IPoolElement<T>[]>)array).UpdateContents(newContents);
 		}
 
-		public static IPoolElement<T> AppendIndexedPackedArray<T>(
-			IndexedPackedArray<T> array,
-			AllocationCommand<IPoolElement<T>> allocationCommand)
+		public static void MergeIndexedPackedArrays<T>(
+			IndexedPackedArray<T> receiverArray,
+			IndexedPackedArray<T> donorArray,
+			AllocationCommand<IPoolElement<T>> donorAllocationCommand)
 		{
-			int newCapacity = -1;
+			#region Update receiver contents
 
-			int appendeeIndex = array.Capacity;
+			int newReceiverCapacity = receiverArray.Capacity + donorArray.Capacity;
 
-			switch (allocationCommand.Descriptor.Rule)
+			IPoolElement<T>[] newReceiverContents = new IPoolElement<T>[newReceiverCapacity];
+
+			for (int i = 0; i < receiverArray.Capacity; i++)
+				newReceiverContents[i] = receiverArray[i];
+
+			for(int i = 0; i < donorArray.Capacity; i++)
 			{
-				case EAllocationAmountRule.ADD_ONE:
-					newCapacity = array.Capacity + 1;
-					break;
+				int newIndex = i + receiverArray.Capacity;
 
-				case EAllocationAmountRule.DOUBLE_AMOUNT:
-					newCapacity = Math.Max(array.Capacity, 1) * 2;
-					break;
-
-				case EAllocationAmountRule.ADD_PREDEFINED_AMOUNT:
-					newCapacity = array.Capacity + allocationCommand.Descriptor.Amount;
-					break;
-
-				default:
-					throw new Exception($"[CollectionFactory] INVALID RESIZE ALLOCATION COMMAND RULE FOR INDEXED PACKED ARRAY: {allocationCommand.Descriptor.Rule.ToString()}");
+				newReceiverContents[newIndex] = donorArray[i];
 			}
 
-			IPoolElement<T>[] newContents = new IPoolElement<T>[newCapacity];
-
-			if (newCapacity <= array.Capacity)
+			if (receiverArray.Capacity == receiverArray.Count)
 			{
-				for (int i = 0; i < newCapacity; i++)
-					newContents[i] = array[i];
+				for (int i = 0; i < donorArray.Count; i++)
+				{
+					int newIndex = i + receiverArray.Capacity;
+
+					((IIndexed)newReceiverContents[newIndex]).Index = newIndex;
+				}
+
+				/*
+				for (int i = donorArray.Count; i < donorArray.Capacity; i++)
+				{
+					int index = i + receiverArray.Capacity;
+
+					((IIndexed)newReceiverContents[index]).Index = -1;
+				}
+				*/
 			}
 			else
 			{
-				for (int i = 0; i < array.Capacity; i++)
-					newContents[i] = array[i];
+				int lastReceiverFreeItemIndex = receiverArray.Count;
 
-				for (int i = array.Capacity; i < newCapacity; i++)
-					newContents[i] = allocationCommand.AllocationDelegate();
+				for (int i = 0; i < donorArray.Count; i++)
+				{
+					int newIndex = i + receiverArray.Capacity;
+
+					((IIndexed)newReceiverContents[lastReceiverFreeItemIndex]).Index = -1;
+
+					((IIndexed)newReceiverContents[newIndex]).Index = lastReceiverFreeItemIndex;
+
+
+					var swap = newReceiverContents[newIndex];
+
+					newReceiverContents[newIndex] = newReceiverContents[lastReceiverFreeItemIndex];
+
+					newReceiverContents[lastReceiverFreeItemIndex] = swap;
+				}
+
+				/*
+				for (int i = donorArray.Count; i < donorArray.Capacity; i++)
+				{
+					int index = i + receiverArray.Capacity;
+
+					((IIndexed)newReceiverContents[index]).Index = -1;
+				}
+				*/
 			}
 
-			((IContentsModifiable<IPoolElement<T>[]>)array).UpdateContents(newContents);
+			((IContentsModifiable<IPoolElement<T>[]>)receiverArray).UpdateContents(newReceiverContents);
 
-			return newContents[appendeeIndex];
+			((ICountModifiable)receiverArray).UpdateCount(receiverArray.Count + donorArray.Count);
+
+			#endregion
+
+			#region Update donor contents
+
+			int newDonorCapacity = -1;
+
+			switch (donorAllocationCommand.Descriptor.Rule)
+			{
+				case EAllocationAmountRule.ADD_ONE:
+					newDonorCapacity = 1;
+					break;
+
+				case EAllocationAmountRule.ADD_PREDEFINED_AMOUNT:
+					newDonorCapacity = donorAllocationCommand.Descriptor.Amount;
+					break;
+
+				default:
+					throw new Exception($"[CollectionFactory] INVALID DONOR ALLOCATION COMMAND RULE: {donorAllocationCommand.Descriptor.Rule.ToString()}");
+			}
+
+			IPoolElement<T>[] newDonorContents = new IPoolElement<T>[newDonorCapacity];
+
+			for (int i = 0; i < newDonorCapacity; i++)
+				newDonorContents[i] = donorAllocationCommand.AllocationDelegate();
+
+			((IContentsModifiable<IPoolElement<T>[]>)donorArray).UpdateContents(newDonorContents);
+
+			((ICountModifiable)donorArray).UpdateCount(0);
+
+			#endregion
 		}
 
 		#endregion
@@ -280,7 +358,6 @@ namespace HereticalSolutions.Collections.Factories
 		#region Pool element allocation command
 
 		public static AllocationCommand<IPoolElement<T>> BuildPoolElementAllocationCommand<T>(
-			//AllocationCommand<T> valueAllocationCommand,
 			AllocationCommandDescriptor descriptor,
 			Func<T> valueAllocationDelegate,
 			Func<Func<T>, IPoolElement<T>> containerAllocationDelegate)
@@ -290,7 +367,7 @@ namespace HereticalSolutions.Collections.Factories
 
 			var poolElementAllocationCommand = new AllocationCommand<IPoolElement<T>>
 			{
-				Descriptor = descriptor, //valueAllocationCommand.Descriptor,
+				Descriptor = descriptor,
 
 				AllocationDelegate = poolElementAllocationDelegate
 			};

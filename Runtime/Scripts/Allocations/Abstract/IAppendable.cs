@@ -1,6 +1,6 @@
 using HereticalSolutions.Collections;
 
-namespace HereticalSolutions.Allocations.Internal
+namespace HereticalSolutions.Allocations
 {
 	public interface IAppendable<T>
 	{

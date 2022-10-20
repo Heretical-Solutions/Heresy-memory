@@ -1,4 +1,4 @@
-namespace HereticalSolutions.Allocations.Internal
+namespace HereticalSolutions.Allocations
 {
 	public interface IResizable<T>
 	{
