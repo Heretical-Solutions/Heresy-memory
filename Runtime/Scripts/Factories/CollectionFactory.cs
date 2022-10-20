@@ -108,6 +108,8 @@ namespace HereticalSolutions.Collections.Factories
 			AllocationCommandDescriptor initialAllocation,
 			AllocationCommandDescriptor additionalAllocation)
 		{
+			Func<T> nullAllocation = () => { return default(T); };
+
 			INonAllocPool<T> supplyAndMergePool = BuildSupplyAndMergePool<T>(
 
 				BuildPoolElementAllocationCommand<T>(
@@ -117,7 +119,7 @@ namespace HereticalSolutions.Collections.Factories
 
 				BuildPoolElementAllocationCommand<T>(
 					additionalAllocation,
-					null,
+					nullAllocation,
 					containerAllocationDelegate),
 
 				valueAllocationDelegate);
