@@ -40,7 +40,7 @@ namespace HereticalSolutions.Collections.Managed
 		public void TopUpAndMerge()
 		{
 			for (int i = supplyArray.Count; i < supplyArray.Capacity; i++)
-				TopUp(supplyArray[i]);
+				TopUp(supplyArray.ElementAt(i));
 
 			MergeSupplyIntoBase();
 		}

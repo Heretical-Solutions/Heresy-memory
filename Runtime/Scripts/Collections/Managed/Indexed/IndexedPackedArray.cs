@@ -94,6 +94,11 @@ namespace HereticalSolutions.Collections.Managed
             return contents[index];
         }
 
+		public IPoolElement<T> ElementAt(int index)
+		{
+			return contents[index];
+		}
+
 		/*
         public TChild Get<TChild>(int index) where TChild : T
         {
