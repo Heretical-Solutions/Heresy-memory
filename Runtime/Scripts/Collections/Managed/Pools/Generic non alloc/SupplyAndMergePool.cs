@@ -37,7 +37,7 @@ namespace HereticalSolutions.Collections.Managed
 			mergeDelegate.Invoke(baseArray, supplyArray, AppendAllocationCommand);
 		}
 
-		public void Resize()
+		public void TopUpAndMerge()
 		{
 			for (int i = supplyArray.Count; i < supplyArray.Capacity; i++)
 				TopUp(supplyArray[i]);
@@ -80,7 +80,7 @@ namespace HereticalSolutions.Collections.Managed
 		{
 			if (!baseArray.HasFreeSpace)
 			{
-				Resize();
+				TopUpAndMerge();
 			}
 
 			IPoolElement<T> result = baseArray.Pop();
@@ -90,6 +90,15 @@ namespace HereticalSolutions.Collections.Managed
 
 		public void Push(IPoolElement<T> instance)
 		{
+			var instanceIndex = ((IIndexed)instance).Index;
+
+			if (instanceIndex > -1
+				&& instanceIndex < supplyArray.Count
+				&& supplyArray[instanceIndex] == instance)
+			{
+				TopUpAndMerge();
+			}
+
 			baseArray.Push(instance);
 		}
 
