@@ -313,6 +313,9 @@ namespace HereticalSolutions.Collections.Factories
 					newReceiverContents[newIndex] = newReceiverContents[lastReceiverFreeItemIndex];
 
 					newReceiverContents[lastReceiverFreeItemIndex] = swap;
+
+
+					lastReceiverFreeItemIndex++;
 				}
 
 				/*
