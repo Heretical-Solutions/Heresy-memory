@@ -97,7 +97,9 @@ namespace HereticalSolutions.Collections.Factories
 				BuildPoolElementAllocationCommand<T>(
 					additionalAllocation,
 					valueAllocationDelegate,
-					containerAllocationDelegate));
+					containerAllocationDelegate),
+
+					valueAllocationDelegate);
 
 			return packedArrayPool;
 		}
@@ -154,14 +156,16 @@ namespace HereticalSolutions.Collections.Factories
 
 		public static PackedArrayPool<T> BuildPackedArrayPool<T>(
 			AllocationCommand<IPoolElement<T>> initialAllocationCommand,
-			AllocationCommand<IPoolElement<T>> resizeAllocationCommand)
+			AllocationCommand<IPoolElement<T>> resizeAllocationCommand,
+			Func<T> topUpAllocationDelegate)
 		{
 			var pool = BuildIndexedPackedArray<T>(initialAllocationCommand);
 
 			return new PackedArrayPool<T>(
 				pool,
 				ResizePackedArrayPool,
-				resizeAllocationCommand);
+				resizeAllocationCommand,
+				topUpAllocationDelegate);
 		}
 
 		public static void ResizePackedArrayPool<T>(
@@ -270,7 +274,7 @@ namespace HereticalSolutions.Collections.Factories
 			for (int i = 0; i < receiverArray.Capacity; i++)
 				newReceiverContents[i] = oldReceiverContents[i];
 
-			for(int i = 0; i < donorArray.Capacity; i++)
+			for (int i = 0; i < donorArray.Capacity; i++)
 			{
 				int newIndex = i + receiverArray.Capacity;
 

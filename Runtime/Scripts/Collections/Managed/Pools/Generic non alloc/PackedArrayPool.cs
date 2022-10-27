@@ -6,7 +6,8 @@ namespace HereticalSolutions.Collections.Managed
 	public class PackedArrayPool<T>
 		: INonAllocPool<T>,
 		  IResizable<IPoolElement<T>>, //used by CollectionFactory to resize
-		  IContentsRetrievable<IndexedPackedArray<T>> //used by CollectionFactory to resize
+		  IContentsRetrievable<IndexedPackedArray<T>>, //used by CollectionFactory to resize
+		  ITopUppable<T>
 	{
 		protected IndexedPackedArray<T> packedArray;
 
@@ -29,14 +30,28 @@ namespace HereticalSolutions.Collections.Managed
 
 		#endregion
 
+		#region ITopUppable
+
+		private Func<T> topUpAllocationDelegate;
+
+		public void TopUp(IPoolElement<T> element)
+		{
+			element.Value = topUpAllocationDelegate.Invoke();
+		}
+
+		#endregion
+
 		public PackedArrayPool(
 			IndexedPackedArray<T> packedArray,
 			Action<PackedArrayPool<T>> resizeDelegate,
-			AllocationCommand<IPoolElement<T>> resizeAllocationCommand)
+			AllocationCommand<IPoolElement<T>> resizeAllocationCommand,
+			Func<T> topUpAllocationDelegate)
 		{
 			this.packedArray = packedArray;
 
 			this.resizeDelegate = resizeDelegate;
+
+			this.topUpAllocationDelegate = topUpAllocationDelegate;
 
 			ResizeAllocationCommand = resizeAllocationCommand;
 		}
