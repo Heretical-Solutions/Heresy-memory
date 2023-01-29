@@ -5,8 +5,8 @@ namespace HereticalSolutions.Collections.Managed
 {
 	public class PackedArrayPool<T>
 		: INonAllocPool<T>,
-		  IResizable<IPoolElement<T>>, //used by CollectionsFactory to resize
-		  IContentsRetrievable<IndexedPackedArray<T>>, //used by CollectionsFactory to resize
+		  IResizable<IPoolElement<T>>, //used by CollectionFactory to resize
+		  IContentsRetrievable<IndexedPackedArray<T>>, //used by CollectionFactory to resize
 		  ITopUppable<T>
 	{
 		protected IndexedPackedArray<T> packedArray;
