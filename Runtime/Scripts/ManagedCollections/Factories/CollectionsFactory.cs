@@ -37,7 +37,7 @@ namespace HereticalSolutions.Collections.Factories
 					break;
 
 				default:
-					throw new Exception($"[CollectionFactory] INVALID INITIAL ALLOCATION COMMAND RULE: {initialAllocationCommand.Descriptor.Rule.ToString()}");
+					throw new Exception($"[CollectionsFactory] INVALID INITIAL ALLOCATION COMMAND RULE: {initialAllocationCommand.Descriptor.Rule.ToString()}");
 			}
 
 			for (int i = 0; i < initialAmount; i++)
@@ -70,7 +70,7 @@ namespace HereticalSolutions.Collections.Factories
 					break;
 
 				default:
-					throw new Exception($"[CollectionFactory] INVALID RESIZE ALLOCATION COMMAND RULE FOR STACK: {allocationCommand.Descriptor.Rule.ToString()}");
+					throw new Exception($"[CollectionsFactory] INVALID RESIZE ALLOCATION COMMAND RULE FOR STACK: {allocationCommand.Descriptor.Rule.ToString()}");
 			}
 
 			for (int i = 0; i < addedCapacity; i++)
@@ -201,7 +201,7 @@ namespace HereticalSolutions.Collections.Factories
 					break;
 
 				default:
-					throw new Exception($"[CollectionFactory] INVALID ALLOCATION COMMAND RULE: {allocationCommand.Descriptor.Rule.ToString()}");
+					throw new Exception($"[CollectionsFactory] INVALID ALLOCATION COMMAND RULE: {allocationCommand.Descriptor.Rule.ToString()}");
 			}
 
 			IPoolElement<T>[] contents = new IPoolElement<T>[initialAmount];
@@ -233,7 +233,7 @@ namespace HereticalSolutions.Collections.Factories
 					break;
 
 				default:
-					throw new Exception($"[CollectionFactory] INVALID ALLOCATION COMMAND RULE FOR INDEXED PACKED ARRAY: {allocationCommand.Descriptor.Rule.ToString()}");
+					throw new Exception($"[CollectionsFactory] INVALID ALLOCATION COMMAND RULE FOR INDEXED PACKED ARRAY: {allocationCommand.Descriptor.Rule.ToString()}");
 			}
 
 			IPoolElement<T>[] oldContents = ((IContentsRetrievable<IPoolElement<T>[]>)array).Contents;
@@ -354,7 +354,7 @@ namespace HereticalSolutions.Collections.Factories
 					break;
 
 				default:
-					throw new Exception($"[CollectionFactory] INVALID DONOR ALLOCATION COMMAND RULE: {donorAllocationCommand.Descriptor.Rule.ToString()}");
+					throw new Exception($"[CollectionsFactory] INVALID DONOR ALLOCATION COMMAND RULE: {donorAllocationCommand.Descriptor.Rule.ToString()}");
 			}
 
 			IPoolElement<T>[] newDonorContents = new IPoolElement<T>[newDonorCapacity];

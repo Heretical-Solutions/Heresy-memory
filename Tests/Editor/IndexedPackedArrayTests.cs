@@ -1,7 +1,7 @@
 using NUnit.Framework;
 using HereticalSolutions.Collections.Factories;
 using HereticalSolutions.Collections.Managed;
-using HereticalSolutions.Allocations;
+using HereticalSolutions.Collections.Allocations;
 
 namespace HereticalSolutions.Collections.Tests
 {
@@ -16,8 +16,8 @@ namespace HereticalSolutions.Collections.Tests
 			int element3)
 		{
 				//Allocation
-				IndexedPackedArray<int> packedArray = CollectionFactory.BuildIndexedPackedArray<int>(
-					CollectionFactory.BuildPoolElementAllocationCommand<int>(
+				IndexedPackedArray<int> packedArray = CollectionsFactory.BuildIndexedPackedArray<int>(
+					CollectionsFactory.BuildPoolElementAllocationCommand<int>(
 						/*
 						new AllocationCommand<int>
 						{
@@ -32,7 +32,7 @@ namespace HereticalSolutions.Collections.Tests
 							Amount = arraySize
 						},
 						() => { return -1; },
-						CollectionFactory.BuildIndexedContainer));
+						CollectionsFactory.BuildIndexedContainer));
 
 				//Operation
 
@@ -95,8 +95,8 @@ namespace HereticalSolutions.Collections.Tests
 			int element3)
 		{
 				//Allocation
-				IndexedPackedArray<int> packedArray = CollectionFactory.BuildIndexedPackedArray<int>(
-					CollectionFactory.BuildPoolElementAllocationCommand<int>(
+				IndexedPackedArray<int> packedArray = CollectionsFactory.BuildIndexedPackedArray<int>(
+					CollectionsFactory.BuildPoolElementAllocationCommand<int>(
 						/*
 						new AllocationCommand<int>
 						{
@@ -111,7 +111,7 @@ namespace HereticalSolutions.Collections.Tests
 							Amount = arraySize
 						},
 						() => { return -1; },
-						CollectionFactory.BuildIndexedContainer));
+						CollectionsFactory.BuildIndexedContainer));
 
 				//Operation and comparison
 
@@ -184,8 +184,8 @@ namespace HereticalSolutions.Collections.Tests
 			int element3)
 		{
 				//Allocation
-				IndexedPackedArray<int> packedArray = CollectionFactory.BuildIndexedPackedArray<int>(
-					CollectionFactory.BuildPoolElementAllocationCommand<int>(
+				IndexedPackedArray<int> packedArray = CollectionsFactory.BuildIndexedPackedArray<int>(
+					CollectionsFactory.BuildPoolElementAllocationCommand<int>(
 						/*
 						new AllocationCommand<int>
 						{
@@ -200,7 +200,7 @@ namespace HereticalSolutions.Collections.Tests
 							Amount = arraySize
 						},
 						() => { return -1; },
-						CollectionFactory.BuildIndexedContainer));
+						CollectionsFactory.BuildIndexedContainer));
 
 				//Operation and comparison
 
