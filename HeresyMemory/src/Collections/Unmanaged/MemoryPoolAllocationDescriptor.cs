@@ -1,4 +1,4 @@
-using HereticalSolutions.Allocations;
+using HereticalSolutions.Collections.Allocations;
 
 namespace HereticalSolutions.Collections.Unmanaged.Internal
 {

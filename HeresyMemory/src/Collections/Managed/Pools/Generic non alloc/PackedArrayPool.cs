@@ -1,5 +1,5 @@
 using System;
-using HereticalSolutions.Allocations;
+using HereticalSolutions.Collections.Allocations;
 
 namespace HereticalSolutions.Collections.Managed
 {

@@ -1,6 +1,6 @@
 using System;
 
-namespace HereticalSolutions.Allocations
+namespace HereticalSolutions.Collections.Allocations
 {
 	public class AllocationCommand<T>
 	{

@@ -1,15 +1,16 @@
-using HereticalSolutions.Allocations;
+using HereticalSolutions.Collections.Allocations;
 
 using HereticalSolutions.Collections.Managed;
 using HereticalSolutions.Collections.Unmanaged;
 
 using System;
 using System.Collections.Generic;
+
 using System.Runtime.InteropServices;
 
 namespace HereticalSolutions.Collections.Factories
 {
-	public static class CollectionFactory
+	public static partial class CollectionsFactory
 	{
 		#region Stack pool
 

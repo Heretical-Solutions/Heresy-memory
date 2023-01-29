@@ -1,4 +1,4 @@
-namespace HereticalSolutions.Allocations
+namespace HereticalSolutions.Collections
 {
 	public interface IContentsRetrievable<TCollection>
 	{

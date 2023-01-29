@@ -1,4 +1,4 @@
-namespace HereticalSolutions.Allocations
+namespace HereticalSolutions.Collections.Allocations
 {
 	public enum EAllocationAmountRule
 	{

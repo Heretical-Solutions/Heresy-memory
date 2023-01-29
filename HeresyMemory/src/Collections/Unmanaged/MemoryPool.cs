@@ -1,7 +1,7 @@
 using System;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using HereticalSolutions.Allocations;
+using HereticalSolutions.Collections.Allocations;
 using HereticalSolutions.Collections.Unmanaged.Internal;
 
 namespace HereticalSolutions.Collections.Unmanaged
