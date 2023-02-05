@@ -3,12 +3,11 @@ using System.Threading;
 
 namespace HereticalSolutions.Collections.Managed
 {
-    //Courtesy of https://github.com/joaoportela/CircularBuffer-CSharp/blob/master/CircularBuffer/CircularBuffer.cs
     public class ConcurrentGenericCircularBuffer<TValue>
     {
-        private TValue[] contents;
+        private volatile TValue[] contents;
 
-        private BufferElementDescriptor[] descriptors;
+        private volatile BufferElementDescriptor[] descriptors;
         
 
         private volatile int producerStart;
@@ -55,6 +54,8 @@ namespace HereticalSolutions.Collections.Managed
 
         public void RequestProduceNonAlloc(ref ProducerTicket result)
         {
+            #region Prepare the values to be written to a descriptor array
+
             //Allocate unique key for producer
             int key = Interlocked.Increment(ref freeKey);
 
@@ -67,19 +68,51 @@ namespace HereticalSolutions.Collections.Managed
                 State = EBufferElementState.ALLOCATED_FOR_PRODUCER
             };
 
+            #endregion
+
             //Prepare to SPIN
             SpinWait spin = new SpinWait();
 
             while (true)
             {
                 //Read the current producer queue end index
-                int currentProducerEnd = Interlocked.Read(ref producerEnd);                
+                int currentProducerEnd = Interlocked.Read(ref producerEnd);
+
+                //Increment and wrap the producer queue end index
+                int newProducerEnd = IncrementAndWrap(currentProducerEnd);
+
+                #region Ouroboros prevention mechanism
+
+                //Read the current consumer queue start and end indexes
+                int currentConsumerStart = Interlocked.Read(ref consumerStart);
+
+                int currentConsumerEnd = Interlocked.Read(ref consumerEnd);
+
+                //Unwrap if necessary
+                if (currentConsumerEnd < currentConsumerStart)
+                    currentConsumerEnd += contents.Length;
+
+                //If new producer end is within consumer queue then produce failure
+                if (newProducerEnd >= currentConsumerStart && newProducerEnd <= currentConsumerEnd)
+                {
+                    result.RequestSuccess = false;
+
+                    result.Key = -1;
+
+                    result.Index = -1;
+
+                    return;
+                }
+
+                #endregion
 
                 //Read the descriptor of the current producer queue end
                 var currentDescriptor = Interlocked.CompareExchange<BufferElementDescriptor>(
                     ref descriptors[currentProducerEnd],
                     default(BufferElementDescriptor),
                     default(BufferElementDescriptor));
+
+                #region Overwrite prevention mechanism
 
                 //If it's not vacant then produce failure
                 if (currentDescriptor.State != EBufferElementState.VACANT)
@@ -93,6 +126,10 @@ namespace HereticalSolutions.Collections.Managed
                     return;
                 }
 
+                #endregion
+
+                #region Allocate a descriptor at the producer end queue and increment producer end index
+
                 //Try to write new descriptor values
                 var updatedDescriptor = Interlocked.CompareExchange<BufferElementDescriptor>(
                     ref descriptors[currentProducerEnd],
@@ -102,8 +139,7 @@ namespace HereticalSolutions.Collections.Managed
                 //Proceed only if succeeded
                 if (updatedDescriptor == currentDescriptor)
                 {
-                    //Increment and wrap the producer queue end index
-                    int newProducerEnd = IncrementAndWrap(currentProducerEnd);
+                    #region Increment producer end index
 
                     //Write new index
                     int updatedProducerEnd = Interlocked.CompareExchange(
@@ -123,12 +159,41 @@ namespace HereticalSolutions.Collections.Managed
                         return;
                     }
 
+                    #region Faulty producer end index prevention mechanism
+
+                    //Read the current producer queue start index
+                    int currentProducerStart = Interlocked.Read(ref producerStart);
+
+                    //Unwrap if necessary
+                    if (updatedProducerEnd < currentProducerStart)
+                        updatedProducerEnd += contents.Length;
+
+                    //If updated producer end is greater than new producer end then leave it as be and call it a day
+                    if (updatedProducerEnd > newProducerEnd)
+                    {
+                        result.RequestSuccess = true;
+
+                        result.Key = key;
+
+                        result.Index = currentProducerEnd;
+
+                        return;
+                    }
+
+                    #endregion
+
+                    currentProducerEnd = updatedProducerEnd;
+
                     //Try again
                     spin.SpinOnce();
+
+                    #endregion
                 }
 
-                //Looks like the descriptor was overwritten. Spin and repeat
+                //Looks like the descriptor was overwritten by another thread. Spin and repeat
                 spin.SpinOnce();
+
+                #endregion
             }
 
             //This should not happen
@@ -145,6 +210,8 @@ namespace HereticalSolutions.Collections.Managed
             if (!ticket.RequestSuccess)
                 return false;
 
+            #region Prepare the values to be written to a descriptor array
+
             //Create the new descriptor pre-emptively
             //Fill out the descriptor copy with desired values
             BufferElementDescriptor newDescriptor = new BufferElementDescriptor
@@ -153,6 +220,8 @@ namespace HereticalSolutions.Collections.Managed
 
                 State = EBufferElementState.FILLED
             };
+
+            #endregion
 
             //Prepare to SPIN
             SpinWait spin = new SpinWait();
@@ -165,6 +234,8 @@ namespace HereticalSolutions.Collections.Managed
                     default(BufferElementDescriptor),
                     default(BufferElementDescriptor));
 
+                #region Validate ticket
+
                 //Skip invalid tickets
                 if (currentDescriptor.State != EBufferElementState.ALLOCATED_FOR_PRODUCER)
                     return false;
@@ -172,10 +243,14 @@ namespace HereticalSolutions.Collections.Managed
                 if (currentDescriptor.Key != ticket.Key)
                     return false;
 
+                #endregion
+
                 //Produce
                 Interlocked.Exchange<TValue>(
                     ref contents[ticket.Index],
                     newValue);
+
+                #region Update the descriptor at the ticket index and increment producer start index
 
                 //Try to write new descriptor values
                 var updatedDescriptor = Interlocked.CompareExchange<BufferElementDescriptor>(
@@ -186,10 +261,29 @@ namespace HereticalSolutions.Collections.Managed
                 //Proceed only if succeeded
                 if (updatedDescriptor == currentDescriptor)
                 {
+                    #region Increment producer start index
+
                     while (true)
                     {
                         //Read the current producer queue start index
                         int currentProducerStart = Interlocked.Read(ref producerStart);
+                        
+                        #region Faulty producer start index prevention mechanism
+
+                        int currentProducerEnd = Interlocked.Read(ref producerEnd);
+
+                        int currentProducerStartUnwrapped = currentProducerStart;
+                        
+                        if (currentProducerStart < ticket.Index && currentProducerEnd < ticket.Index)
+                            currentProducerStartUnwrapped += contents.Length;
+
+                        //If it's already greater than the ticket index then just return
+                        if (currentProducerStartUnwrapped > ticket.Index)
+                            return true;
+
+                        #endregion
+
+                        #region Check whether all descriptors starting with current producer queue start up to ticket index are filled
 
                         int newProducerStart = currentProducerStart;
 
@@ -221,6 +315,8 @@ namespace HereticalSolutions.Collections.Managed
                         if (newProducerStart == currentProducerStart)
                             return true;
 
+                        #endregion
+
                         //Write new index
                         int updatedProducerStart = Interlocked.CompareExchange(
                             ref producerStart,
@@ -238,7 +334,11 @@ namespace HereticalSolutions.Collections.Managed
                     }
 
                     return true;
+
+                    #endregion
                 }
+
+                #endregion
 
                 //Looks like the descriptor was overwritten. Spin and repeat
                 spin.SpinOnce();
