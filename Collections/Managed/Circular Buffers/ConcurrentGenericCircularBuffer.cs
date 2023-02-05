@@ -139,55 +139,60 @@ namespace HereticalSolutions.Collections.Managed
                 //Proceed only if succeeded
                 if (updatedDescriptor == currentDescriptor)
                 {
+                    #region Update ticket
+
+                    result.RequestSuccess = true;
+
+                    result.Key = key;
+
+                    result.Index = currentProducerEnd;
+
+                    #endregion
+
                     #region Increment producer end index
 
-                    //Write new index
-                    int updatedProducerEnd = Interlocked.CompareExchange(
-                        ref producerEnd,
-                        newProducerEnd,
-                        currentProducerEnd);
-                    
-                    //Success
-                    if (currentProducerEnd == updatedProducerEnd)
+                    while (true)
                     {
-                        result.RequestSuccess = true;
+                        //Write new index
+                        int updatedProducerEnd = Interlocked.CompareExchange(
+                            ref producerEnd,
+                            newProducerEnd,
+                            currentProducerEnd);
+                        
+                        //Success
+                        if (currentProducerEnd == updatedProducerEnd)
+                        {
+                            return;
+                        }
 
-                        result.Key = key;
+                        #region Faulty producer end index prevention mechanism
 
-                        result.Index = currentProducerEnd;
+                        //Read the current producer queue start index
+                        int currentProducerStart = Interlocked.Read(ref producerStart);
 
-                        return;
-                    }
+                        int updatedProducerEndUnwrapped = updatedProducerEnd;
 
-                    #region Faulty producer end index prevention mechanism
+                        //Unwrap if necessary
+                        if (updatedProducerEnd < currentProducerStart)
+                            updatedProducerEndUnwrapped += contents.Length;
 
-                    //Read the current producer queue start index
-                    int currentProducerStart = Interlocked.Read(ref producerStart);
+                        //If updated producer end is greater than new producer end then leave it as be and call it a day
+                        if (updatedProducerEndUnwrapped > newProducerEnd)
+                        {
+                            return;
+                        }
 
-                    //Unwrap if necessary
-                    if (updatedProducerEnd < currentProducerStart)
-                        updatedProducerEnd += contents.Length;
+                        #endregion
 
-                    //If updated producer end is greater than new producer end then leave it as be and call it a day
-                    if (updatedProducerEnd > newProducerEnd)
-                    {
-                        result.RequestSuccess = true;
+                        currentProducerEnd = updatedProducerEnd;
 
-                        result.Key = key;
-
-                        result.Index = currentProducerEnd;
-
-                        return;
+                        //Try again
+                        spin.SpinOnce();
                     }
 
                     #endregion
 
-                    currentProducerEnd = updatedProducerEnd;
-
-                    //Try again
-                    spin.SpinOnce();
-
-                    #endregion
+                    return;
                 }
 
                 //Looks like the descriptor was overwritten by another thread. Spin and repeat
@@ -254,7 +259,7 @@ namespace HereticalSolutions.Collections.Managed
 
                 //Try to write new descriptor values
                 var updatedDescriptor = Interlocked.CompareExchange<BufferElementDescriptor>(
-                    ref descriptors[currentProducerEnd],
+                    ref descriptors[ticket.Index],
                     newDescriptor,
                     currentDescriptor);
 
@@ -270,46 +275,59 @@ namespace HereticalSolutions.Collections.Managed
                         
                         #region Faulty producer start index prevention mechanism
 
+                        //If it's already greater than the ticket index then just return
+                        if (currentProducerStart > ticket.Index)
+                            return true;
+
                         int currentProducerEnd = Interlocked.Read(ref producerEnd);
 
-                        int currentProducerStartUnwrapped = currentProducerStart;
-                        
-                        if (currentProducerStart < ticket.Index && currentProducerEnd < ticket.Index)
-                            currentProducerStartUnwrapped += contents.Length;
-
-                        //If it's already greater than the ticket index then just return
-                        if (currentProducerStartUnwrapped > ticket.Index)
+                        if (currentProducerStart < ticket.Index 
+                            && currentProducerEnd < ticket.Index
+                            && currentProducerEnd >= currentProducerStart)
                             return true;
 
                         #endregion
 
-                        #region Check whether all descriptors starting with current producer queue start up to ticket index are filled
+                        int newProducerStart = -1;
 
-                        int newProducerStart = currentProducerStart;
-
-                        //Iterate from start index to ticket index to check whether all elements are filled
-                        while (newProducerStart != ticket.Index)
+                        if (currentProducerStart == ticket.Index)
                         {
-                            var currentIndexDescriptor = Interlocked.CompareExchange<BufferElementDescriptor>(
-                                ref descriptors[newProducerStart],
-                                default(BufferElementDescriptor),
-                                default(BufferElementDescriptor));
+                            newProducerStart = IncrementAndWrap(ticket.Index);
+                        }
+                        else
+                        {
+                            #region Check whether all descriptors starting with current producer queue start up to ticket index are filled
 
-                            //if (currentIndexDescriptor.State == EBufferElementState.ALLOCATED_FOR_PRODUCER)
-                            //    break;
-
-                            if (currentIndexDescriptor.State != EBufferElementState.FILLED)
+                            //Iterate from current start index to ticket index to check whether all elements are filled
+                            for (int i = currentProducerStart;
+                                 i != ticket.Index;
+                                 i = IncrementAndWrap(i))
                             {
-                                break;
+                                var currentIndexDescriptor = Interlocked.CompareExchange<BufferElementDescriptor>(
+                                    ref descriptors[i],
+                                    default(BufferElementDescriptor),
+                                    default(BufferElementDescriptor));
+
+                                if (currentIndexDescriptor.State != EBufferElementState.FILLED)
+                                {
+                                    break;
+                                }
+                                else
+                                    newProducerStart = i;
                             }
 
-                            newProducerStart = IncrementAndWrap(newProducerStart);
+                            //We have omitted checking the descriptor at ticket index on purpose - we've already changed it to desired value
+                            //If all the tickets before current are filled
+                            if (newProducerStart == ticket.Index)
+                                newProducerStart = IncrementAndWrap(ticket.Index);
+
+                            #endregion
                         }
 
-                        //We have omitted checking the descriptor at ticket index on purpose - we've already changed it to desired value
-                        //If all the tickets before current are filled
-                        if (newProducerStart == ticket.Index)
-                            newProducerStart++;
+                        #region Early return if updating producer queue start index is useless
+
+                        if (newProducerStart == -1)
+                            return true;
 
                         //If nothing changed in terms of producer start value, just return
                         if (newProducerStart == currentProducerStart)
@@ -348,118 +366,325 @@ namespace HereticalSolutions.Collections.Managed
             return false;
         }
 
+        public void RequestConsumeNonAlloc(ref ConsumerTicket result)
+        {
+            #region Prepare the values to be written to a descriptor array
+
+            //Allocate unique key for consumer
+            int key = Interlocked.Increment(ref freeKey);
+
+            //Create the new descriptor pre-emptively
+            //Fill out the descriptor copy with desired values
+            BufferElementDescriptor newDescriptor = new BufferElementDescriptor
+            {
+                Key = key,
+
+                State = EBufferElementState.ALLOCATED_FOR_CONSUMER
+            };
+
+            #endregion
+
+            //Prepare to SPIN
+            SpinWait spin = new SpinWait();
+
+            while (true)
+            {
+                //Read the current consumer queue end index
+                int currentConsumerEnd = Interlocked.Read(ref consumerEnd);
+
+                //Increment and wrap the consumer queue end index
+                int newConsumerEnd = IncrementAndWrap(currentConsumerEnd);
+
+                #region Overconsuming prevention mechanism
+
+                //Read the current producer queue start and end indexes
+                int currentProducerStart = Interlocked.Read(ref producerStart);
+
+                int currentProducerEnd = Interlocked.Read(ref producerEnd);
+
+                //Unwrap if necessary
+                if (currentProducerEnd < currentProducerStart)
+                    currentProducerEnd += contents.Length;
+
+                //If new consumer end is within producer queue then consume failure
+                if (newConsumerEnd >= currentProducerStart && newConsumerEnd <= currentProducerEnd)
+                {
+                    result.RequestSuccess = false;
+
+                    result.Key = -1;
+
+                    result.Index = -1;
+
+                    return;
+                }
+
+                #endregion
+
+                //Read the descriptor of the current consumer queue end
+                var currentDescriptor = Interlocked.CompareExchange<BufferElementDescriptor>(
+                    ref descriptors[currentConsumerEnd],
+                    default(BufferElementDescriptor),
+                    default(BufferElementDescriptor));
+
+                #region Overwrite prevention mechanism
+
+                //If it's not vacant then produce failure
+                if (currentDescriptor.State != EBufferElementState.FILLED)
+                {
+                    result.RequestSuccess = false;
+
+                    result.Key = -1;
+
+                    result.Index = -1;
+
+                    return;
+                }
+
+                #endregion
+
+                #region Allocate a descriptor at the consumer end queue and increment consumer end index
+
+                //Try to write new descriptor values
+                var updatedDescriptor = Interlocked.CompareExchange<BufferElementDescriptor>(
+                    ref descriptors[currentConsumerEnd],
+                    newDescriptor,
+                    currentDescriptor);
+
+                //Proceed only if succeeded
+                if (updatedDescriptor == currentDescriptor)
+                {
+                    #region Update ticket
+
+                    result.RequestSuccess = true;
+
+                    result.Key = key;
+
+                    result.Index = currentConsumerEnd;
+
+                    #endregion
+
+                    #region Increment consumer end index
+
+                    while (true)
+                    {
+                        //Write new index
+                        int updatedConsumerEnd = Interlocked.CompareExchange(
+                            ref consumerEnd,
+                            newConsumerEnd,
+                            currentConsumerEnd);
+                        
+                        //Success
+                        if (currentConsumerEnd == updatedConsumerEnd)
+                        {
+                            return;
+                        }
+
+                        #region Faulty consumer end index prevention mechanism
+
+                        //Read the current consumer queue start index
+                        int currentConsumerStart = Interlocked.Read(ref consumerStart);
+
+                        int updatedConsumerEndUnwrapped = updatedConsumerEnd;
+
+                        //Unwrap if necessary
+                        if (updatedConsumerEnd < currentConsumerStart)
+                            updatedConsumerEndUnwrapped += contents.Length;
+
+                        //If updated consumer end is greater than new consumer end then leave it as be and call it a day
+                        if (updatedConsumerEndUnwrapped > newConsumerEnd)
+                        {
+                            return;
+                        }
+
+                        #endregion
+
+                        currentConsumerEnd = updatedConsumerEnd;
+
+                        //Try again
+                        spin.SpinOnce();
+                    }
+
+                    #endregion
+
+                    return;
+                }
+
+                //Looks like the descriptor was overwritten by another thread. Spin and repeat
+                spin.SpinOnce();
+
+                #endregion
+            }
+
+            //This should not happen
+            result.RequestSuccess = false;
+
+            result.Key = -1;
+
+            result.Index = -1;
+        }
+
+        public bool Consume(ConsumerTicket ticket, out TValue newValue)
+        {
+            //Skip invalid tickets
+            if (!ticket.RequestSuccess)
+                return false;
+
+            #region Prepare the values to be written to a descriptor array
+
+            //Create the new descriptor pre-emptively
+            //Fill out the descriptor copy with desired values
+            BufferElementDescriptor newDescriptor = new BufferElementDescriptor
+            {
+                Key = -1,
+
+                State = EBufferElementState.VACANT
+            };
+
+            #endregion
+
+            //Prepare to SPIN
+            SpinWait spin = new SpinWait();
+
+            while (true)
+            {
+                //Read the descriptor at the ticket index
+                var currentDescriptor = Interlocked.CompareExchange<BufferElementDescriptor>(
+                    ref descriptors[ticket.Index],
+                    default(BufferElementDescriptor),
+                    default(BufferElementDescriptor));
+
+                #region Validate ticket
+
+                //Skip invalid tickets
+                if (currentDescriptor.State != EBufferElementState.ALLOCATED_FOR_CONSUMER)
+                    return false;
+
+                if (currentDescriptor.Key != ticket.Key)
+                    return false;
+
+                #endregion
+
+                //Consume
+                result = Interlocked.CompareExchange<TValue>(
+                    ref contents[ticket.Index],
+                    default(TValue),
+                    default(TValue));
+
+                #region Update the descriptor at the ticket index and increment consumer start index
+
+                //Try to write new descriptor values
+                var updatedDescriptor = Interlocked.CompareExchange<BufferElementDescriptor>(
+                    ref descriptors[ticket.Index],
+                    newDescriptor,
+                    currentDescriptor);
+
+                //Proceed only if succeeded
+                if (updatedDescriptor == currentDescriptor)
+                {
+                    #region Increment consumer start index
+
+                    while (true)
+                    {
+                        //Read the current consumer queue start index
+                        int currentConsumerStart = Interlocked.Read(ref consumerStart);
+                        
+                        #region Faulty consumer start index prevention mechanism
+
+                        //If it's already greater than the ticket index then just return
+                        if (currentConsumerStart > ticket.Index)
+                            return true;
+
+                        int currentConsumerEnd = Interlocked.Read(ref consumerEnd);
+
+                        if (currentConsumerStart < ticket.Index 
+                            && currentConsumerEnd < ticket.Index
+                            && currentConsumerEnd >= currentConsumerStart)
+                            return true;
+
+                        #endregion
+
+                        int newConsumerStart = -1;
+
+                        if (currentConsumerStart == ticket.Index)
+                        {
+                            newConsumerStart = IncrementAndWrap(ticket.Index);
+                        }
+                        else
+                        {
+                            #region Check whether all descriptors starting with current consumer queue start up to ticket index are vacant
+
+                            //Iterate from current start index to ticket index to check whether all elements are vacant
+                            for (int i = currentConsumerStart;
+                                 i != ticket.Index;
+                                 i = IncrementAndWrap(i))
+                            {
+                                var currentIndexDescriptor = Interlocked.CompareExchange<BufferElementDescriptor>(
+                                    ref descriptors[i],
+                                    default(BufferElementDescriptor),
+                                    default(BufferElementDescriptor));
+
+                                if (currentIndexDescriptor.State != EBufferElementState.VACANT)
+                                {
+                                    break;
+                                }
+                                else
+                                    newConsumerStart = i;
+                            }
+
+                            //We have omitted checking the descriptor at ticket index on purpose - we've already changed it to desired value
+                            //If all the tickets before current are filled
+                            if (newConsumerStart == ticket.Index)
+                                newConsumerStart = IncrementAndWrap(ticket.Index);
+
+                            #endregion
+                        }
+
+                        #region Early return if updating consumer queue start index is useless
+
+                        if (newConsumerStart == -1)
+                            return true;
+
+                        //If nothing changed in terms of consumer start value, just return
+                        if (newConsumerStart == currentConsumerStart)
+                            return true;
+
+                        #endregion
+
+                        //Write new index
+                        int updatedConsumerStart = Interlocked.CompareExchange(
+                            ref consumerStart,
+                            newConsumerStart,
+                            currentConsumerStart);
+
+                        //Success
+                        if (currentConsumerStart == updatedConsumerStart)
+                        {
+                            return true;
+                        }
+
+                        //Try again
+                        spin.SpinOnce();
+                    }
+
+                    return true;
+
+                    #endregion
+                }
+
+                #endregion
+
+                //Looks like the descriptor was overwritten. Spin and repeat
+                spin.SpinOnce();
+            }
+
+            //This should not happen
+            return false;
+        }
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private int IncrementAndWrap(int index)
         {
             return (++index) % contents.Length;
         }
-
-
-        /*        
-        private ref TValue this[int index]
-        {
-            get
-            {
-                int actualIndex = InternalIndex(index);
-                
-                return ref contents[actualIndex];
-            }
-        }
-        
-        public ref TValue PushBack()
-        {
-            ref TValue result = ref this[end];
-            
-            end = Increment(end);
-            
-            if (!HasFreeSpace)
-            {
-                start = Increment(end);
-            }
-            else
-            {
-                ++Count;
-            }
-            
-            return ref result;
-        }
-        
-        public ref TValue PopFront()
-        {
-            ThrowIfEmpty("Cannot take elements from an empty buffer.");
-            
-            ref TValue result = ref this[Start];
-            
-            Start = Increment(Start);
-            
-            --Count;
-            
-            return ref result;
-        }
-        
-        public void Clear()
-        {
-            Start = 0;
-            
-            End = 0;
-            
-            Count = 0;
-            
-            //Optional
-            //Buffer.Clear(memoryChunk.Memory, 0, memoryChunk.Size);
-        }
-        
-        private void ThrowIfEmpty(string message = "Cannot access an empty buffer.")
-        {
-            if (IsEmpty)
-            {
-                throw new InvalidOperationException(message);
-            }
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private int Increment(int index)
-        {
-            if (++index == ElementCapacity)
-            {
-                index = 0;
-            }
-            
-            return index;
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private int Decrement(int index)
-        {
-            if (index == 0)
-            {
-                index = ElementCapacity;
-            }
-            
-            index--;
-            
-            return index;
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private int InternalIndex(int index)
-        {
-            return Start + (
-                (index < (ElementCapacity - Start))
-                    ? index
-                    : index - ElementCapacity);
-        }
-        
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private int InternalIndex(uint index)
-        {
-            var result = Start + (
-                (index < (ElementCapacity - Start))
-                    ? index
-                    : index - ElementCapacity);
-            
-            return (int)result;
-        }
-        */
     }   
 }
