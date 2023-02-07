@@ -57,6 +57,23 @@ namespace HereticalSolutions.Collections.Managed
             consumerEnd = 0;
         }
 
+        #region Get
+
+        public EBufferElementState GetState(int index)
+        {
+            return (EBufferElementState)Interlocked.CompareExchange(ref states[index], 0, 0);
+        }
+
+        public TValue GetValue(int index)
+        {
+            return Interlocked.CompareExchange<TValue>(
+                ref contents[index], 
+                default(TValue), 
+                default(TValue));
+        }
+
+        #endregion
+        
         #region Produce
 
         public bool TryProduce(TValue value)
