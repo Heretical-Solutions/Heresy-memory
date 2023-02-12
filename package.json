@@ -1,0 +1,17 @@
+{
+  "name": "com.hereticalsolutions.heresy-mvvm",
+  "version": "0.1.18",
+  "displayName": "Heresy MVVM",
+  "description": "MVVM solution for non-WPF platforms",
+  "unity": "2021.3",
+  "license": "MIT",
+  "keywords": [
+    "mvvm",
+    "heretical-solutions"
+  ],
+  "author":
+  {
+    "name": "BenevolentDrone",
+    "email": "benevolentdrone@gmail.com"
+  }
+}
