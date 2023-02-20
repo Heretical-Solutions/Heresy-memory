@@ -7,33 +7,9 @@ namespace HereticalSolutions.Collections.Managed
 	public class StackPool<T> 
 		: IPool<T>,
 		  IResizable<T>,
-		  IContentsRetrievable<Stack<T>>
+		  IModifiable<Stack<T>>
 	{
 		protected Stack<T> pool;
-
-		#region IContentsRetrievable
-
-		public Stack<T> Contents { get => pool; }
-
-		#endregion
-
-		public void UpdateContents(Stack<T> newContents)
-		{
-			pool = newContents;
-		}
-
-		#region IResizable
-
-		public AllocationCommand<T> ResizeAllocationCommand { get; private set; }
-
-		protected Action<StackPool<T>> resizeDelegate;
-
-		public void Resize()
-		{
-			resizeDelegate(this);
-		}
-
-		#endregion
 
 		public StackPool(
 			Stack<T> pool,
@@ -46,6 +22,35 @@ namespace HereticalSolutions.Collections.Managed
 
 			ResizeAllocationCommand = allocationCommand;
 		}
+		
+		#region IModifiable
+
+		public Stack<T> Contents { get => pool; }
+
+		public void UpdateContents(Stack<T> newContents)
+		{
+			pool = newContents;
+		}
+
+		public void UpdateCount(int newCount)
+		{
+			throw new Exception("[StackPool] CANNOT UPDATE COUNT OF STACK");
+		}
+
+		#endregion
+		
+		#region IResizable
+
+		public AllocationCommand<T> ResizeAllocationCommand { get; private set; }
+
+		protected Action<StackPool<T>> resizeDelegate;
+
+		public void Resize()
+		{
+			resizeDelegate(this);
+		}
+
+		#endregion
 
 		#region IPool
 
@@ -70,6 +75,8 @@ namespace HereticalSolutions.Collections.Managed
 		{
 			pool.Push(instance);
 		}
+		
+		public bool HasFreeSpace { get { return true; } } // ¯\_(ツ)_/¯
 
 		#endregion
 	}
