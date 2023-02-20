@@ -5,5 +5,7 @@ namespace HereticalSolutions.Collections
 		T Pop();
 
 		void Push(T instance);
+		
+		bool HasFreeSpace { get; }
 	}
 }
