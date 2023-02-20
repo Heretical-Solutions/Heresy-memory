@@ -1,84 +1,186 @@
 using System;
-using HereticalSolutions.Collections.Allocations;
 
 namespace HereticalSolutions.Collections.Managed
 {
-	public class PackedArrayPool<T>
-		: INonAllocPool<T>,
-		  IResizable<IPoolElement<T>>, //used by CollectionFactory to resize
-		  IContentsRetrievable<IndexedPackedArray<T>>, //used by CollectionFactory to resize
-		  ITopUppable<T>
-	{
-		protected IndexedPackedArray<T> packedArray;
+    /// <summary>
+    /// The container that combines the functions of a memory pool and a list with an increased performance
+    /// Basic concept is:
+    /// 1. The contents are pre-allocated
+    /// 2. Popping a new item is actually retrieving the first unused item and increasing the last used item index
+    /// 3. Pushing an item is taking the last used item, swapping it with the removed item and decreasing the last used item index
+    /// </summary>
+    /// <typeparam name="T">Type of the objects stored in the container</typeparam>
+    public class PackedArrayPool<T>
+        : IFixedSizeCollection<IPoolElement<T>>,
+	      INonAllocPool<T>,
+          IIndexable<IPoolElement<T>>,
+          IModifiable<IPoolElement<T>[]>
+    {
+        private IPoolElement<T>[] contents;
+        
+        private int count;
 
-		#region IContentsRetrievable
+        public PackedArrayPool(IPoolElement<T>[] contents)
+        {
+            this.contents = contents;
+            
+            count = 0;
+        }
+        
+        #region IFixedSizeCollection
 
-		public IndexedPackedArray<T> Contents { get => packedArray; }
+        public int Capacity { get { return contents.Length; } }
+        
+        public IPoolElement<T> ElementAt(int index)
+        {
+	        return contents[index];
+        }
 
-		#endregion
+        #endregion
 
-		#region IResizable
+		#region IModifiable
 
-		public AllocationCommand<IPoolElement<T>> ResizeAllocationCommand { get; private set; }
-
-		protected Action<PackedArrayPool<T>> resizeDelegate;
-
-		public void Resize()
+		public IPoolElement<T>[] Contents { get { return contents; } }
+		
+		public void UpdateContents(IPoolElement<T>[] newContents)
+        {
+            contents = newContents;
+        }
+		
+		public void UpdateCount(int newCount)
 		{
-			resizeDelegate(this);
+			count = newCount;
 		}
 
 		#endregion
 
-		#region ITopUppable
+		#region IIndexable
 
-		private Func<T> topUpAllocationDelegate;
-
-		public void TopUp(IPoolElement<T> element)
+		public int Count { get { return count; } }
+		
+		public IPoolElement<T> this[int index]
 		{
-			element.Value = topUpAllocationDelegate.Invoke();
+			get
+			{
+                if (index >= count || index < 0)
+					throw new Exception(
+                        string.Format(
+							"[IndexedPackedArray<{0}>] INVALID INDEX: {1} COUNT:{2} CAPACITY:{3}",
+                            typeof(T).ToString(),
+                            index,
+                            Count,
+                            Capacity));
+
+				return contents[index];
+			}
+		}
+		
+		public IPoolElement<T> Get(int index)
+		{
+			if (index >= count || index < 0)
+				throw new Exception(
+					string.Format(
+						"[IndexedPackedArray<{0}>] INVALID INDEX: {1} COUNT:{2} CAPACITY:{3}",
+						typeof(T).ToString(),
+						index,
+						Count,
+						Capacity));
+
+			return contents[index];
 		}
 
-		#endregion
+        #endregion
 
-		public PackedArrayPool(
-			IndexedPackedArray<T> packedArray,
-			Action<PackedArrayPool<T>> resizeDelegate,
-			AllocationCommand<IPoolElement<T>> resizeAllocationCommand,
-			Func<T> topUpAllocationDelegate)
-		{
-			this.packedArray = packedArray;
-
-			this.resizeDelegate = resizeDelegate;
-
-			this.topUpAllocationDelegate = topUpAllocationDelegate;
-
-			ResizeAllocationCommand = resizeAllocationCommand;
-		}
-
-		#region INonAllocPool
+        #region INonAllocPool
 
 		public IPoolElement<T> Pop()
+        {
+            var result = contents[count];
+
+            ((IIndexed)result).Index = count;
+
+            count++;
+
+            return result;
+        }
+
+		public IPoolElement<T> Pop(int index)
 		{
-			if (!packedArray.HasFreeSpace)
-			{
-				int previousCapacity = packedArray.Capacity;
-
-				resizeDelegate(this);
-
-				int newCapacity = packedArray.Capacity;
+            if (index < count)
+            {
+                throw new Exception($"[IndexedPackedArray] ELEMENT AT INDEX {index} IS ALREADY POPPED");
 			}
 
-			IPoolElement<T> result = packedArray.Pop();
+
+			int lastFreeItemIndex = count;
+
+			if (index != lastFreeItemIndex)
+			{
+				((IIndexed)contents[lastFreeItemIndex]).Index = -1;
+
+				((IIndexed)contents[index]).Index = index;
+
+
+				var swap = contents[index];
+
+				contents[index] = contents[lastFreeItemIndex];
+
+				contents[lastFreeItemIndex] = swap;
+			}
+			else
+			{
+				((IIndexed)contents[index]).Index = index;
+			}
+
+
+			var result = contents[lastFreeItemIndex];
+
+			count++;
 
 			return result;
 		}
 
-		public void Push(IPoolElement<T> instance)
-		{
-			packedArray.Push(instance);
-		}
+        public void Push(IPoolElement<T> item)
+        {
+            Push(((IIndexed)item).Index);
+        }
 
-		#endregion
-	}
+        public void Push(int index)
+        {
+            if (index >= count)
+            {
+                #if DEBUG_LOG
+                Debug.Log("ATTEMPT TO DOUBLE PUSH ITEM");
+                #endif
+
+                return;
+            }
+
+            int lastItemIndex = count - 1;
+
+            if (index != lastItemIndex)
+            {
+                ((IIndexed)contents[lastItemIndex]).Index = index;
+
+                ((IIndexed)contents[index]).Index = -1;
+
+
+                var swap = contents[index];
+
+                contents[index] = contents[lastItemIndex];
+
+                contents[lastItemIndex] = swap;
+            }
+            else
+            {
+				((IIndexed)contents[index]).Index = -1;
+            }
+
+            count--;
+        }
+
+        public bool HasFreeSpace { get { return count < contents.Length; } }
+        
+        #endregion
+    }
 }
