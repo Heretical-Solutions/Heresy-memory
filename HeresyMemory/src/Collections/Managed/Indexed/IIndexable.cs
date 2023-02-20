@@ -5,5 +5,7 @@ namespace HereticalSolutions.Collections.Managed
 		int Count { get; }
 
 		T this[int index] { get; }
+
+		T Get(int index);
 	}
 }
