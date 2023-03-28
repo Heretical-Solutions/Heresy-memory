@@ -24,7 +24,11 @@ Heresy Memory is a set of collections, interfaces and solutions for controlled m
 
 ## Installation
 
+//TODO
+
 ## Usage
+
+//TODO
 
 ## Documentation
 
