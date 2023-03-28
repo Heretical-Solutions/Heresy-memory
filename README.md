@@ -31,17 +31,17 @@ Heresy Memory is a set of collections, interfaces and solutions for controlled m
 <details>
 <summary>EN documentation</summary>
 
-- [Allocations](docs/en/Allocations.md)
-- [Collection interfaces](docs/en/Collection interfaces.md)
-- [MPMC Circular Buffer](docs/en/MPMC Circular Buffers.md)
+* [Allocations](docs/en/Allocations.md)
+* [Collection interfaces](docs/en/Collection%20interfaces.md)
+* [MPMC Circular Buffer](docs/en/MPMC%20Circular%20Buffers.md)
 
 </details>
 
 <details>
 <summary>UA documentation</summary>
 
-- [Allocations](docs/ua/Allocations.md)
-- [Collection interfaces](docs/ua/Collection interfaces.md)
-- [MPMC Circular Buffer](docs/ua/MPMC Circular Buffers.md)
+* [Allocations](docs/ua/Allocations.md)
+* [Collection interfaces](docs/ua/Collection%20interfaces.md)
+* [MPMC Circular Buffer](docs/ua/MPMC%20Circular%20Buffers.md)
 
 </details>
