@@ -1,4 +1,4 @@
-<img src="docs/Images/logo.png?raw=true" alt="Heresy Pools" width="500px" height="250px"/>
+<img src="docs/Images/logo.png?raw=true" alt="Heresy Memory" width="500px" height="250px"/>
 
 # Heresy Memory
 
@@ -31,17 +31,17 @@ Heresy Memory is a set of collections, interfaces and solutions for controlled m
 <details>
 <summary>EN documentation</summary>
 
-- [Allocations]("./docs/en/Allocations")
-- [Collection interfaces]("./docs/en/Collection interfaces")
-- [MPMC Circular Buffer]("./docs/en/MPMC Circular Buffers")
+- [Allocations](docs/en/Allocations)
+- [Collection interfaces](docs/en/Collection interfaces)
+- [MPMC Circular Buffer](docs/en/MPMC Circular Buffers)
 
 </details>
 
 <details>
 <summary>UA documentation</summary>
 
-- [Allocations]("./docs/ua/Allocations")
-- [Collection interfaces]("./docs/ua/Collection interfaces")
-- [MPMC Circular Buffer]("./docs/ua/MPMC Circular Buffers")
+- [Allocations](docs/ua/Allocations)
+- [Collection interfaces](docs/ua/Collection interfaces)
+- [MPMC Circular Buffer](docs/ua/MPMC Circular Buffers)
 
 </details>

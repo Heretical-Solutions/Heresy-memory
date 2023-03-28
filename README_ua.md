@@ -1,4 +1,4 @@
-<img src="docs/Images/logo.png?raw=true" alt="Heresy Pools" width="500px" height="250px"/>
+<img src="docs/Images/logo.png?raw=true" alt="Heresy Memory" width="500px" height="250px"/>
 
 # Heresy Memory
 
@@ -31,17 +31,17 @@ Heresy Memory – це набір колекцій, інтерфейсів та 
 <details>
 <summary>EN документація</summary>
 
-- [Алокації]("./docs/en/Allocations")
-- [Інтерфейси колекцій]("./docs/en/Collection interfaces")
-- [MPMC Циркулярний Буфер]("./docs/en/MPMC Circular Buffers")
+- [Алокації](docs/en/Allocations)
+- [Інтерфейси колекцій](docs/en/Collection interfaces)
+- [MPMC Циркулярний Буфер](docs/en/MPMC Circular Buffers)
 
 </details>
 
 <details>
 <summary>UA документація</summary>
 
-- [Алокації]("./docs/ua/Allocations")
-- [Інтерфейси колекцій]("./docs/ua/Collection interfaces")
-- [MPMC Циркулярний Буфер]("./docs/ua/MPMC Circular Buffers")
+- [Алокації](docs/ua/Allocations)
+- [Інтерфейси колекцій](docs/ua/Collection interfaces)
+- [MPMC Циркулярний Буфер](docs/ua/MPMC Circular Buffers)
 
 </details>
