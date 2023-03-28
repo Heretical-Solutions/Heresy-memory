@@ -33,6 +33,6 @@ Enum. Specifies the rule by which the amount of elements in the collection is ca
 
 Serializable structure. Encapsulates the allocation rule and the amount of allocated elements 
 
-* `AllocationCommandDescriptor` 
+* `AllocationCommand` 
 
 Command pattern. Encapsulates a descriptor and a delegate that produces a new instance of the desired type 
