@@ -14,7 +14,7 @@ Multiple Producers Multiple Consumers (MPMC) circular buffer has long been used 
 
 ### Classes
 
-*`EBufferElementState`
+* `EBufferElementState`
 
 Enum. Indicates the status of the circular buffer element. VACANT - empty, available for wtiting, ALLOCATED_FOR_PRODUCER - allocated for writing, being filled in, FILLED - written, available for reading, ALLOCATED_FOR_CONSUMER - allocated for reading, being read.
 
