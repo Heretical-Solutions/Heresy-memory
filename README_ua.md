@@ -31,17 +31,17 @@ Heresy Memory – це набір колекцій, інтерфейсів та 
 <details>
 <summary>EN документація</summary>
 
-- [Алокації](docs/en/Allocations)
-- [Інтерфейси колекцій](docs/en/Collection interfaces)
-- [MPMC Циркулярний Буфер](docs/en/MPMC Circular Buffers)
+- [Алокації](docs/en/Allocations.md)
+- [Інтерфейси колекцій](docs/en/Collection interfaces.md)
+- [MPMC Циркулярний Буфер](docs/en/MPMC Circular Buffers.md)
 
 </details>
 
 <details>
 <summary>UA документація</summary>
 
-- [Алокації](docs/ua/Allocations)
-- [Інтерфейси колекцій](docs/ua/Collection interfaces)
-- [MPMC Циркулярний Буфер](docs/ua/MPMC Circular Buffers)
+- [Алокації](docs/ua/Allocations.md)
+- [Інтерфейси колекцій](docs/ua/Collection interfaces.md)
+- [MPMC Циркулярний Буфер](docs/ua/MPMC Circular Buffers.md)
 
 </details>
