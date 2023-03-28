@@ -16,8 +16,8 @@ Multiple Producers Multiple Consumers (MPMC) circular buffer has long been used 
 
 *`EBufferElementState`
 
-Enum. Indicates the status of the circular buffer cell. VACANT - empty, writable, ALLOCATED_FOR_PRODUCER - allocated for writing, being filled in, FILLED - written, available for reading, ALLOCATED_FOR_CONSUMER - allocated for reading, being read.
+Enum. Indicates the status of the circular buffer element. VACANT - empty, available for wtiting, ALLOCATED_FOR_PRODUCER - allocated for writing, being filled in, FILLED - written, available for reading, ALLOCATED_FOR_CONSUMER - allocated for reading, being read.
 
 * `ConcurrentGenericCircularBuffer`
 
-MPMC Circular Buffer. Provides methods `GetState(int index)`, which returns the state of the buffer cell by index, `TryProduce(TValue value)`, which attempts to write to the buffer, and `TryConsume(out TValue value)`, which attempts to read the value from the buffer
+MPMC Circular Buffer. Provides methods `GetState(int index)`, which returns the state of the buffer element by index, `TryProduce(TValue value)`, which attempts to write to the buffer, and `TryConsume(out TValue value)`, which attempts to read the value from the buffer
