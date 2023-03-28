@@ -3,43 +3,85 @@ using System.Runtime.CompilerServices;
 
 namespace HereticalSolutions.Collections.Managed
 {
+    /// <summary>
+    /// An MPMC circular buffer
+    /// </summary>
     public class ConcurrentGenericCircularBuffer<TValue> where TValue : class
     {
+        #region Consts
+        
         //Enum values stored in consts to quicken the state comparisons
         //We still need enum itself for serialization purposes
+        
+        /// <summary>
+        /// Cached vacant state
+        /// </summary>
         private const int STATE_VACANT = (int)EBufferElementState.VACANT;
         
+        /// <summary>
+        /// Cached allocated for producer state
+        /// </summary>
         private const int STATE_ALLOCATED_FOR_PRODUCER = (int)EBufferElementState.ALLOCATED_FOR_PRODUCER;
         
+        /// <summary>
+        /// Cached filled state
+        /// </summary>
         private const int STATE_FILLED = (int)EBufferElementState.FILLED;
         
+        /// <summary>
+        /// Cached allocated for consumer state
+        /// </summary>
         private const int STATE_ALLOCATED_FOR_CONSUMER = (int)EBufferElementState.ALLOCATED_FOR_CONSUMER;
         
+        #endregion
         
-        
+        /// <summary>
+        /// The contents array
+        /// </summary>
         private volatile TValue[] contents;
 
+        /// <summary>
+        /// The states array
+        /// </summary>
         private volatile int[] states;
-        
+
+        #region Starts and ends
 
         //private volatile int producerStart;
 
+        /// <summary>
+        /// The producer queue end
+        /// </summary>
         private volatile int producerEnd;
 
         //private volatile int consumerStart;
 
+        /// <summary>
+        /// The consumer queue end
+        /// </summary>
         private volatile int consumerEnd;
-
         
         //public int ProducerStart { get { return Interlocked.CompareExchange(ref producerStart, 0, 0); } }
 
+        /// <summary>
+        /// Returns the producer queue end index
+        /// </summary>
         public int ProducerEnd { get { return Interlocked.CompareExchange(ref producerEnd, 0, 0); } }
 
         //public int ConsumerStart { get { return Interlocked.CompareExchange(ref producerStart, 0, 0); } }
 
+        /// <summary>
+        /// Returns the consumer queue end index
+        /// </summary>
         public int ConsumerEnd { get { return Interlocked.CompareExchange(ref consumerEnd, 0, 0); } }
 
+        #endregion
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ConcurrentGenericCircularBuffer"/> class
+        /// </summary>
+        /// <param name="contents">The contents array</param>
+        /// <param name="states">The states array</param>
         public ConcurrentGenericCircularBuffer(
             TValue[] contents,
             int[] states)
@@ -59,11 +101,21 @@ namespace HereticalSolutions.Collections.Managed
 
         #region Get
 
+        /// <summary>
+        /// Retrieves the state of the buffer element by index in thread safe manner
+        /// </summary>
+        /// <param name="index">The index</param>
+        /// <returns>The state of the buffer element by index</returns>
         public EBufferElementState GetState(int index)
         {
             return (EBufferElementState)Interlocked.CompareExchange(ref states[index], 0, 0);
         }
 
+        /// <summary>
+        /// Retrieves the current buffer element value by index in thread safe manner
+        /// </summary>
+        /// <param name="index">The index</param>
+        /// <returns>The current buffer element value by index</returns>
         public TValue GetValue(int index)
         {
             return Interlocked.CompareExchange<TValue>(
@@ -76,6 +128,11 @@ namespace HereticalSolutions.Collections.Managed
         
         #region Produce
 
+        /// <summary>
+        /// Attempts to write the value to the buffer
+        /// </summary>
+        /// <param name="value">The value</param>
+        /// <returns>Whether the write was successful</returns>
         public bool TryProduce(TValue value)
         {
             SpinWait spin = new SpinWait();
@@ -83,6 +140,12 @@ namespace HereticalSolutions.Collections.Managed
             return TryAllocateProducer(spin, out int index) && TryProduce(index, value);
         }
 
+        /// <summary>
+        /// Attempts to claim the next buffer element in the producer queue for writing and retries if the producer queue index changed during the attempt
+        /// </summary>
+        /// <param name="spin">The spinlock</param>
+        /// <param name="index">The current producer queue end index</param>
+        /// <returns>Whether the allocation was successful</returns>
         private bool TryAllocateProducer(SpinWait spin, out int index)
         {
             int lastIndex = -1;
@@ -108,6 +171,11 @@ namespace HereticalSolutions.Collections.Managed
             }
         }
 
+        /// <summary>
+        /// Attempts to claim the next buffer element in the producer queue for writing
+        /// </summary>
+        /// <param name="currentProducerEnd">The current producer queue end index</param>
+        /// <returns>Whether the allocation was successful</returns>
         private bool TryAllocateProducer(out int currentProducerEnd)
         {
             #region Read producer queue end index
@@ -160,6 +228,12 @@ namespace HereticalSolutions.Collections.Managed
             return true;
         }
 
+        /// <summary>
+        /// Attempts to write the value into buffer element allocated for writing and change its state to 'filled' so that it can be read from by consumers
+        /// </summary>
+        /// <param name="index">The buffer element index</param>
+        /// <param name="value">The value</param>
+        /// <returns>Whether the write was successful</returns>
         private bool TryProduce(int index, TValue value)
         {
             //Write value
@@ -180,6 +254,11 @@ namespace HereticalSolutions.Collections.Managed
 
         #region Consume
 
+        /// <summary>
+        /// Attempts to read the value from the buffer
+        /// </summary>
+        /// <param name="value">The value</param>
+        /// <returns>Whether the read was successful</returns>
         public bool TryConsume(out TValue value)
         {
             value = default(TValue);
@@ -189,6 +268,12 @@ namespace HereticalSolutions.Collections.Managed
             return TryAllocateConsumer(spin, out int index) && TryConsume(index, out value);
         }
 
+        /// <summary>
+        /// Attempts to claim the next buffer element in the consumer queue for reading and retries if the consumer queue index changed during the attempt
+        /// </summary>
+        /// <param name="spin">The spinlock</param>
+        /// <param name="index">The current consumer queue end index</param>
+        /// <returns>Whether the allocation was successful</returns>
         private bool TryAllocateConsumer(SpinWait spin, out int index)
         {
             int lastIndex = -1;
@@ -214,6 +299,11 @@ namespace HereticalSolutions.Collections.Managed
             }
         }
 
+        /// <summary>
+        /// Attempts to claim the next buffer element in the consumer queue for reading
+        /// </summary>
+        /// <param name="currentConsumerEnd">The current consumer queue end index</param>
+        /// <returns>Whether the allocation was successful</returns>
         private bool TryAllocateConsumer(out int currentConsumerEnd)
         {
             #region Read consumer queue end index
@@ -266,6 +356,12 @@ namespace HereticalSolutions.Collections.Managed
             return true;
         }
 
+        /// <summary>
+        /// Attempts to read the value from the buffer element allocated for reading and change its state to 'vacant' so that it can be written to by producers
+        /// </summary>
+        /// <param name="index">The buffer element index</param>
+        /// <param name="value">The value</param>
+        /// <returns>Whether the read was successful</returns>
         private bool TryConsume(int index, out TValue value)
         {
             //Read value
@@ -285,6 +381,11 @@ namespace HereticalSolutions.Collections.Managed
 
         #endregion
         
+        /// <summary>
+        /// Increments the queue index and wraps it around if index gets outside the contents array length
+        /// </summary>
+        /// <param name="index">The index</param>
+        /// <returns>The incremented index</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private int IncrementAndWrap(int index)
         {
