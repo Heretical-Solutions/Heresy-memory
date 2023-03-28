@@ -26,6 +26,12 @@ Indicates that the collection has a fixed size (like an array). Allows the user 
 
 Contains the `Capacity` property, which returns the current maximum size of the collection, and the `ElementAt(int index)` method, which returns the collection element by integer index
 
+### `IIndexable`
+
+Indicates that the collection has a count of currently used elements and can access them by index.
+
+Contains the `Count` property, which returns the amount of currently used elements of the collection, the `this[int index]` indexer property, which returns the collection element by integer index, and the `Get(int index)` method, which does the same, but does not perform index validation (allows, for example, to get an element of the collection that has not yet been used)
+
 ## Private interfaces
 
 ### `IModifiable`
