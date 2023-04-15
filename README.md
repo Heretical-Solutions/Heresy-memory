@@ -10,6 +10,7 @@
 - [Description](#description)
 - [Installation](#installation)
 - [Usage](#usage)
+- [Branch structure](#branch-structure)
 - [Documentation](#documentation)
 
 </details>
@@ -27,6 +28,10 @@ Heresy Memory is a set of collections, interfaces and solutions for controlled m
 //TODO
 
 ## Usage
+
+//TODO
+
+## Branch structure
 
 //TODO
 
